@@ -275,6 +275,6 @@ describe('format resolution', () => {
     expect(resolveFormat({ format: 'auto' }, { GITHUB_ACTIONS: 'true' })).toBe('github'));
   it('rejects an unknown format name', () => {
     expect(isFormat('github')).toBe(true);
-    expect(isFormat('sarif')).toBe(false);
+    expect(isFormat('unknown')).toBe(false);
   });
 });

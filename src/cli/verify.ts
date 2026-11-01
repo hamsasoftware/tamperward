@@ -101,6 +101,7 @@ import { colourEnabled } from './render/text';
 import { paint, severityColour, BOLD, type Severity } from './render/status';
 import { configuredAuditPath } from './audit';
 import { measurementComparison, recordMeasurement, type MeasurementOutcome } from './measurements';
+import { verifySarif } from '../sarif';
 
 export { materialize, materializationFailureReason, probeFilesystemCaseSensitivity } from '../candidate-snapshot';
 
@@ -110,6 +111,7 @@ export interface VerifyOpts {
   cmd?: string;
   budget?: number;
   json?: boolean;
+  format?: 'json' | 'sarif';
   /** @internal Suppress human/machine stdout when verify is nested inside another JSON envelope. */
   silent?: boolean;
   keep?: boolean;
@@ -879,7 +881,7 @@ export function runVerify(opts: VerifyOpts): number {
   try { path = configuredAuditPath(markerCwd); } catch { /* evidence only */ }
   const measurement: { outcome: MeasurementOutcome; comparison?: string; oob_signoff?: boolean } = { outcome: 'INCOMPLETE' };
   try {
-    return runVerifyImpl({ ...opts, onVerdict: v => { measurement.outcome = v.verdict; opts.onVerdict?.(v); } }, path ? measurement : undefined);
+    return runVerifyImpl({ ...opts, json: opts.json || opts.format !== undefined, onVerdict: v => { measurement.outcome = v.verdict; opts.onVerdict?.(v); } }, path ? measurement : undefined);
   } catch (error) {
     measurement.outcome = 'INCOMPLETE';
     delete measurement.oob_signoff;
@@ -907,8 +909,11 @@ function runVerifyImpl(opts: VerifyOpts, measurement?: { comparison?: string; oo
     const sev: Severity = /failing closed/i.test(s) ? 'bad' : 'info';
     return paint('verify:', (sev === 'bad' ? BOLD : '') + severityColour(sev), colour) + s.slice('verify:'.length);
   };
+  let receiptDigest: string | null = null;
   const out = opts.silent
     ? (_s: string): void => {}
+    : opts.format === 'sarif'
+      ? (s: string): void => void process.stdout.write(JSON.stringify(verifySarif(JSON.parse(s), receiptDigest), null, 2) + '\n')
     : (s: string): void => void process.stdout.write(paintVerify(s) + '\n');
 
   // Probed once the temp root exists, then reported in every document so the
@@ -1447,12 +1452,15 @@ function runVerifyImpl(opts: VerifyOpts, measurement?: { comparison?: string; oo
       };
       // Reuse the tree fingerprint proved unchanged above (finding 6): the record
       // binds the same tree without a second full read of the worktree.
-      recordVerification(cwd, inputs, treeBefore);
+      const recorded = recordVerification(cwd, inputs, treeBefore);
       // Emit the transportable receipt (#601) bound to the SAME state, stored
       // under `.git/tamperward/` — outside the candidate-controlled tree. It is
       // a projection of the record just written, so it re-derives no identity.
-      const written = readVerificationRecord(cwd);
-      if (written) storeReceipt(cwd, receiptFromRecord(written));
+      const written = recorded ? readVerificationRecord(cwd) : null;
+      if (written) {
+        const receipt = receiptFromRecord(written);
+        if (storeReceipt(cwd, receipt)) receiptDigest = receipt.evidence_digest;
+      }
     } catch {
       // Evidence only. Recording must never change the verification verdict.
     }
@@ -1583,6 +1591,13 @@ export function parseVerify(args: string[]): VerifyOpts {
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     if (a === '--json') o.json = true;
+    else if (a === '--format') {
+      const v = value(i, a);
+      if (v === undefined) continue;
+      i++;
+      if (v === 'json' || v === 'sarif') o.format = v;
+      else o.invalid ??= `--format needs one of json | sarif (got "${v}")`;
+    }
     else if (a === '--keep') o.keep = true;
     else if (a === '--require-ancestor') o.requireAncestor = true;
     else if (a === '--base' || a === '--cmd' || a === '--cwd' || a === '--budget' || a === '--cargo-target-root') {
@@ -1600,5 +1615,6 @@ export function parseVerify(args: string[]): VerifyOpts {
       }
     }
   }
+  if (o.json && o.format) o.invalid ??= '--json cannot be combined with --format';
   return o;
 }

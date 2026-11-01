@@ -14,10 +14,11 @@ import { Finding } from '../types';
 import { machineOutput } from '../machine-output';
 import { colourEnabled, renderText, terminalWidth } from './render/text';
 import { annotations, isGitHubActions, renderSummary, writeSummary } from './render/github';
+import { checkSarif } from '../sarif';
 
-export type Format = 'auto' | 'text' | 'json' | 'github';
+export type Format = 'auto' | 'text' | 'json' | 'github' | 'sarif';
 
-export const FORMATS: Format[] = ['auto', 'text', 'json', 'github'];
+export const FORMATS: Format[] = ['auto', 'text', 'json', 'github', 'sarif'];
 
 export function isFormat(s: string): s is Format {
   return FORMATS.some((f) => f === s);
@@ -46,6 +47,11 @@ export function resolveFormat(
 export function report(input: ReportInput): void {
   const { findings, scanned, ignoredFiles } = input;
   const format = resolveFormat(input);
+
+  if (format === 'sarif') {
+    process.stdout.write(JSON.stringify(checkSarif(input), null, 2) + '\n');
+    return;
+  }
 
   if (format === 'json') {
     const blocks = findings.filter((f) => f.severity === 'block').length;
