@@ -353,6 +353,14 @@ export function computeBinding(
   };
 }
 
+export function verificationPolicyDigest(policy: Policy): string {
+  return digest(policy);
+}
+
+export function verificationVerifierDigest(policy: Policy, command: string, budget: number): string {
+  return digest({ command, budget, inputs: policy.verify?.inputs ?? [], backend: policy.verify?.backend ?? 'local', image: policy.verify?.image ?? null });
+}
+
 /** `.git/tamperward/` for this repository, or null outside a repository. State
  *  lives under the git directory — a non-candidate authority — never in the
  *  tracked, candidate-writable tree. */

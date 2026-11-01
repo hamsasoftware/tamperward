@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.50.0] — 2026-11-01
+
+### Added
+
+- Report the shared suite-exit-only assurance and residual limits in verification,
+  receipts and reconciliation, preserving older receipts and their digest encoding.
+- Add completed verification producer bindings for the actual candidate, baseline,
+  policy and verifier configuration without authenticating unsigned reports (#801).
+
 ## [2.49.4] — 2026-11-01
 
 ### Fixed

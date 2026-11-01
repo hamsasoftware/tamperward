@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/hexrift/tamperward/v2.38.0/schemas/verify-v1.schema.json",
+  "$id": "https://raw.githubusercontent.com/hexrift/tamperward/v2.50.0/schemas/verify-v1.schema.json",
   "title": "TamperWard verify JSON output v1",
   "type": "object",
   "required": [
@@ -8,6 +8,54 @@
     "verdict"
   ],
   "properties": {
+    "evidence_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "head",
+        "base",
+        "tree",
+        "gate_version",
+        "policy_hash",
+        "verifier_hash",
+        "completed",
+        "integrity"
+      ],
+      "properties": {
+        "head": {
+          "type": "string",
+          "pattern": "^(?:[a-f0-9]{40}|[a-f0-9]{64})$"
+        },
+        "base": {
+          "type": "string",
+          "pattern": "^(?:[a-f0-9]{40}|[a-f0-9]{64})$"
+        },
+        "tree": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "gate_version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$",
+          "maxLength": 64
+        },
+        "policy_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "verifier_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "completed": {
+          "const": true
+        },
+        "integrity": {
+          "const": "CLEAN"
+        }
+      },
+      "description": "Identity captured by the trusted verifier for completed adjudication after integrity checks. Absent for incomplete or cannot-verify evidence. Does not authenticate its producer."
+    },
     "schema_version": {
       "const": 1
     },
