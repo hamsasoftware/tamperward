@@ -58,6 +58,45 @@ that every read already shares one safe primitive.
 | `cli/verify` base/overlay Git reads | Existing trusted Git helper: 256 MiB buffer; mode/content restoration remains command-owned | No timeout in that helper or ancestry `spawnSync` | Resolution/overlay failures retain existing fail-closed handling; this extraction does not consolidate these with the bounded run helper |
 | `git/process` / `cli/run` adjudication Git reads | Trusted UTF-8 subprocess, 256 MiB output cap, ignored stdin, captured stdout/stderr | 3 seconds with `SIGKILL` | Read failures throw. Ancestry returns false only for normal exit 1; timeout, signal, crash or another status throws. The preceding bounded-Git change owns this boundary |
 | `suite-diagnostics` / `verifier-backend` execution | Existing supervisor capture, stage budget, bounded diagnostic tails, backend-owned identity and cleanup | Stage budget and supervisor drain deadlines remain authoritative | Timeout, crash, resource exhaustion or incomplete pipes cannot establish a clean completed stage |
+| `cli/doctor` pin and workflow checks | `readStateFile` regular-file checks and 64 MiB disk cap; missing input remains distinct from refused input | No separate filesystem deadline | #812 makes unreadable pins/workflows broken checks; they do not silently become absent |
+| `cli/doctor` Git/API collection | Git probes retain Node's default output buffer and no deadline; GitHub API subprocess has a 15-second timeout and default buffer | As stated per transport | Git probe errors return `null`; API failures throw into broken/unknown posture. Pure GitHub evidence evaluation is transport-free |
+| `verification-state.interventionWiring` | Raw unbounded `readFileSync` of four local/user settings files, without a regular-file guard | No deadline | Parse/read errors become `present: false`; this remains a separate authority-sensitive follow-up, not a guarantee supplied by snapshot extraction |
+| `verification-state` Git and `git/build` reads | Trusted replace-disabled Git, 256 MiB buffers | No timeout in these existing helpers | Process errors propagate or are interpreted by the particular probe; they are not silently consolidated into the bounded run helper |
+
+## Reviewed I/O exceptions and reusable contracts
+
+`test/trust-io-architecture.test.ts` applies a TypeScript AST check only to
+`candidate-snapshot`, `git/trusted`, `git/process`, `github-authority` and
+`external-oracle`. Necessary raw I/O is admitted by a named exception matching the
+function owner, canonical imported API and exact static call count. Snapshot exceptions
+use the invariant names above. The Git exceptions are `GIT-METADATA-PATH` (the one-second
+path probe), `GIT-REWRITE-REFS` (three-second rewrite enumeration), `GIT-BOUNDED-READ`
+(three-second adjudication reads) and `GIT-ANCESTRY-RESULT` (normal exit-1 absence versus
+infrastructure failure). The evaluator/controller modules admit no raw filesystem or
+process I/O.
+
+The checker guards the selected `fs`, `fs/promises`, `child_process`, `process` and
+`module` families, including their `node:` spellings. It rejects unreviewed imports/calls,
+namespace or default imports, re-exports, raw module loaders, extracted imported aliases
+and process access other than environment inspection. Both `globalThis.process` and its
+computed spelling cannot supply an indirect process alias. Import aliases are resolved
+before visiting calls, including
+imports appearing later in a file. Added calls or calls moved to another owner require
+review; unused exceptions also fail. Worker program text and diagnostic strings are
+data rather than host calls, so an AST check does not mistake them for execution.
+It does not audit every Node API, network access or execution inside worker-program text.
+This finite source check is a review aid, not a whole-program security analyzer or a
+replacement for runtime contracts. Expanding its module list or exceptions requires
+updating the inventory and the relevant focused regression.
+
+`test/support/candidate-entry-contract.ts` supplies the same real Git-backed fixture
+and behavioral contract to `readStateFile` and shared materialization. It checks current
+live bytes, a replacement inode with equal size and restored timestamps, missing tracked
+inputs, and directory/FIFO/external-link replacements. Refusals must name the relevant
+shape rather than succeed through an unrelated error. The verification compatibility
+export is checked for function identity instead of duplicating this contract suite.
+The existing symlink-fidelity and external-oracle fixtures remain the independent
+integration checks for domain traversal, dependency links and completed evidence.
 
 ## Limits and consequences
 
