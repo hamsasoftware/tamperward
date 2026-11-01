@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.49.3] — 2026-11-01
+
+### Changed
+
+- Share candidate snapshot materialization between verification and the external
+  oracle without changing its entry, dependency or symlink semantics (#800).
+  Record the trusted I/O inventory, named invariants and current limitations
+  without changing existing read, copy or error semantics.
+
 ## [2.49.2] — 2026-11-01
 
 ### Fixed

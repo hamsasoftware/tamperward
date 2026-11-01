@@ -9,7 +9,7 @@ import { treeFingerprint } from '../fingerprint';
 import { trustedGitEnv } from '../git/trusted';
 import { prepareVerifierBackend, runContainerStage } from '../verifier-backend';
 import { evaluateOracleCases, oracleProgram, parseOraclePlan, type OracleEvaluation } from '../external-oracle';
-import { materialize, probeFilesystemCaseSensitivity } from './verify';
+import { materialize, probeFilesystemCaseSensitivity } from '../candidate-snapshot';
 
 export interface ExternalOracleOpts { cwd: string; manifest: string; sha256: string; schemaVersion?: 1 | 2 }
 type OracleFailureReason = 'MANIFEST_INVALID' | 'BACKEND_UNAVAILABLE' | 'SNAPSHOT_CHANGED' | 'CLEANUP_FAILED' | 'INFRASTRUCTURE_FAILED';
