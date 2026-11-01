@@ -154,6 +154,24 @@ tree; a squash merge has a new commit identity. The bump guard identifies the pe
 version-changing main commit and does not establish equality with the earlier PR
 artifact.
 
+Before publishing, the release job binds source, schemas, root build configuration,
+package manifests and published documents to `GITHUB_SHA`, builds explicitly, and packs
+once with lifecycle scripts disabled. The release job obtains the exact merged PR's
+head from GitHub, fetches its pull-request ref and compares those reviewed inputs with
+the final release commit. Only package/lock root version fields may differ; source,
+dependency, schema and build/workflow changes fail closed. Missing or ambiguous merged
+PR identity also stops publication. This uses read-only pull-request access.
+Input snapshots reject Git symlinks and submodules and retain regular `100644`/`100755`
+modes. Reviewed, release and working-checkout modes must agree, and a separate mode
+digest in the artifact receipt prevents an executable-mode change before publication.
+Captured bytes must match their Git blob object identity; lossy decoding stops verification.
+It installs that tarball offline with the
+lockfile's dependency graph, checks the installed files and every schema major, and
+invokes the installed CLI against its shipped JSON schema. The publish step rechecks
+the input digest and tarball SHA-256 and publishes that same file with scripts disabled.
+This verifies the final release package against its release commit; it does not compare
+the package with a retained artifact from the earlier PR run.
+
 Every release with a behaviour change gets a `CHANGELOG.md` entry naming what it closes.
 Security advisories reference versions, so "which release fixed that bypass" must be
 answerable from the changelog alone.
