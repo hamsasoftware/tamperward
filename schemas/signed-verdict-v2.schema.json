@@ -1,0 +1,254 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/hexrift/tamperward/v2.51.0/schemas/signed-verdict-v2.schema.json",
+  "title": "TamperWard signed suite admission evidence v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "algorithm",
+    "key_id",
+    "statement",
+    "signature"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 2
+    },
+    "algorithm": {
+      "const": "Ed25519"
+    },
+    "key_id": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "statement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "repository",
+        "head",
+        "base",
+        "tree",
+        "gate_version",
+        "policy_hash",
+        "verifier_hash",
+        "verdict",
+        "assurance",
+        "exception",
+        "audience",
+        "nonce",
+        "issued_at",
+        "expires_at",
+        "evidence_sha256",
+        "oracle_assurance",
+        "stages"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": 2
+        },
+        "repository": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]{1,100}/[A-Za-z0-9_.-]{1,100}$"
+        },
+        "head": {
+          "type": "string",
+          "pattern": "^(?:[a-f0-9]{40}|[a-f0-9]{64})$"
+        },
+        "base": {
+          "type": "string",
+          "pattern": "^(?:[a-f0-9]{40}|[a-f0-9]{64})$"
+        },
+        "tree": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "gate_version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$",
+          "maxLength": 64
+        },
+        "policy_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "verifier_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "verdict": {
+          "enum": [
+            "VERIFIED",
+            "MASKED_FAILURE"
+          ]
+        },
+        "assurance": {
+          "const": "suite-exit-only"
+        },
+        "exception": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "rule",
+                "head",
+                "approval"
+              ],
+              "properties": {
+                "rule": {
+                  "const": "verify"
+                },
+                "head": {
+                  "type": "string",
+                  "pattern": "^(?:[a-f0-9]{40}|[a-f0-9]{64})$"
+                },
+                "approval": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9:._/@-]{1,200}$"
+                }
+              }
+            }
+          ]
+        },
+        "audience": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9:._/-]{1,160}$"
+        },
+        "nonce": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9:._/-]{1,160}$"
+        },
+        "issued_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+        },
+        "expires_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+        },
+        "evidence_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "oracle_assurance": {
+          "type": "object",
+          "required": [
+            "level",
+            "semantic_isolation",
+            "candidate_code_executes_in_oracle_process",
+            "limitation"
+          ],
+          "properties": {
+            "level": {
+              "const": "suite-exit-only"
+            },
+            "semantic_isolation": {
+              "const": false
+            },
+            "candidate_code_executes_in_oracle_process": {
+              "const": true
+            },
+            "limitation": {
+              "const": "candidate source executes inside the configured suite process and may terminate or interpose on that in-process oracle; isolated-container is execution-domain isolation, not semantic/oracle isolation"
+            }
+          },
+          "additionalProperties": false
+        },
+        "stages": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "candidate",
+            "pristine",
+            "integrity"
+          ],
+          "properties": {
+            "candidate": {
+              "const": "PASS"
+            },
+            "pristine": {
+              "enum": [
+                "PASS",
+                "FAIL"
+              ]
+            },
+            "integrity": {
+              "const": "CLEAN"
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "verdict": {
+                "const": "VERIFIED"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "exception": {
+                "type": "null"
+              },
+              "stages": {
+                "type": "object",
+                "properties": {
+                  "pristine": {
+                    "const": "PASS"
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "exception": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "rule",
+                  "head",
+                  "approval"
+                ],
+                "properties": {
+                  "rule": {
+                    "const": "verify"
+                  },
+                  "head": {
+                    "type": "string",
+                    "pattern": "^(?:[a-f0-9]{40}|[a-f0-9]{64})$"
+                  },
+                  "approval": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9:._/@-]{1,200}$"
+                  }
+                }
+              },
+              "stages": {
+                "type": "object",
+                "properties": {
+                  "pristine": {
+                    "const": "FAIL"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{86}$"
+    }
+  },
+  "description": "Opt-in transport for a protected producer completed verify report and exact admission context. Supported assurance is suite-exit-only. The signature does not establish producer provenance or complete in-process assertions."
+}
