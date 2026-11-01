@@ -324,7 +324,7 @@ intact file; a case where the **outer harness timeout** killed Codex is treated 
 symlink-escape claimed cwd) run the driver directly with an **explicit** adversarial cwd and
 must fail closed.
 
-Before it may print `Eligible for Round 4.1`, the probe enforces a **provenance gate**:
+Before it may print a finite-probe `FULL` result, the probe enforces a **provenance gate**:
 `CODEX_VERSION_EXPECTED` (the running Codex version token must match it **exactly** — `0.9.1`
 never qualifies a running `0.9.10`), `CODEX_MODEL` (passed
 operatively to `codex exec` as `--model`, so the pinned model is the one that runs), and
@@ -333,14 +333,19 @@ wiring every qualifying gated run is bound to — must be captured, alongside th
 SHA-256, OS/arch, `exec` args, approval/sandbox mode, and adapter/probe/driver hashes. Any
 missing pin caps the result at PARTIAL. With no
 Codex CLI present it reports PARTIAL and exits non-zero, so "could not test" is never mistaken
-for "passed". Only a FULL verdict justifies flipping Codex to `in-loop` and registering
-Round 4.1 — deliberately not done by this PR.
+for "passed". A FULL result covers these finite probe cases only and still reports
+Round 4.1 as not eligible. Eligibility additionally requires retained evidence that
+`tamperward runtime verify` grades FULL, the separate maintainer-reviewed pinned
+parity run and every other gate in the
+[registered protocol](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round4.1/PREDICTION4.1-taskbench.md).
+The probe does not promote a runtime or fill the runtime freeze.
 
 **CI honesty.** A green CI run proves the **build, unit/adapter tests, static gate, protocol
 conformance (a), and the probe self-test (b)** only. It does **not** prove runtime
 qualification: the real-Codex E2E (c) is not run in CI (no Codex binary there). Codex stays
-experimental and `neutral`, `preDeny` stays empty, and no Round 4.1 is registered until a FULL
-`probe:codex-runtime` verdict on a pinned build says otherwise.
+experimental and `neutral`, and `preDeny` stays empty. The registered outcomes-known
+Round 4.1 replication remains unexecuted until its runtime freeze and full eligibility
+gate pass; a finite `probe:codex-runtime` result cannot satisfy them by itself.
 
 A recorded `runtime verify --runtime codex` qualification is bound to the hash of
 `.codex/config.toml`, where Codex reads project hooks; editing or removing that file marks

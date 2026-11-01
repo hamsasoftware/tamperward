@@ -9,7 +9,23 @@ import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 // @ts-expect-error - the probe is a plain .mjs harness module, no d.ts
-import { classifyMutation, classifyDetached, classifyProbeAvailability, controlAvailabilityReason, classifyLifecycleAbort, detachedLifecycleOutcome, stopLifecycleOutcome, collectAfterSettle, classifyFailClosed, failClosedLifecycleOutcome, classifyStop, stopBlockSurfaced, runtimeAbortReason, runtimePairOutcome, distinctToolUseIds, deniedProtectedToolUseIds, deniedTargets, parseVersion, execArgsFor, canonicalHooks, provenanceGate, buildDriver, driverSelfTest, makeRepo, readLedger } from '../harness/adapters/codex-probe.mjs';
+import { classifyMutation, classifyDetached, classifyProbeAvailability, controlAvailabilityReason, classifyLifecycleAbort, detachedLifecycleOutcome, stopLifecycleOutcome, collectAfterSettle, classifyFailClosed, failClosedLifecycleOutcome, classifyStop, stopBlockSurfaced, runtimeAbortReason, runtimePairOutcome, distinctToolUseIds, deniedProtectedToolUseIds, deniedTargets, parseVersion, execArgsFor, canonicalHooks, provenanceGate, probeSummary, buildDriver, driverSelfTest, makeRepo, readLedger } from '../harness/adapters/codex-probe.mjs';
+
+describe('finite probe eligibility', () => {
+  it('preserves a full finite result without granting Round 4.1 eligibility', () => {
+    const output = probeSummary(true).join('\n');
+    expect(output).toContain('VERDICT: FULL');
+    expect(output).toContain('Round 4.1: Not eligible');
+    expect(output).toContain('separate pinned parity');
+    expect(output).toContain('retained runtime verification');
+  });
+
+  it('retains a partial result and refuses Round 4.1 eligibility', () => {
+    const output = probeSummary(false).join('\n');
+    expect(output).toContain('VERDICT: PARTIAL');
+    expect(output).toContain('Round 4.1: Not eligible');
+  });
+});
 
 describe('probe classifiers — every deterministic mode is classified correctly', () => {
   it('marks an unavailable tool as inconclusive rather than enforcement failure', () => {
