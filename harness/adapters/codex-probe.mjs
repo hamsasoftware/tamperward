@@ -287,11 +287,10 @@ function sha256File(path) {
 /** Bundle the committed probe driver (harness/adapters/probe-driver.mjs) so it runs the
  *  SOURCE adapter. Because the driver is a real repo file, esbuild resolves its adapter
  *  import deterministically. */
-export function buildDriver() {
+export function buildDriver(cache = join(ROOT, 'node_modules', '.cache', 'tw-codex-probe')) {
   // Emit UNDER the repo (node_modules/.cache, gitignored) so the driver's own
   // `createRequire` (src/lazy-deps.ts loads `yaml`/`picomatch` at runtime, which esbuild
   // cannot inline through a dynamic require) resolves the repo's node_modules by walking up.
-  const cache = join(ROOT, 'node_modules', '.cache', 'tw-codex-probe');
   mkdirSync(cache, { recursive: true });
   const dir = mkdtempSync(join(cache, 'drv-'));
   const out = join(dir, 'driver.bundle.mjs');
@@ -307,8 +306,8 @@ export function buildDriver() {
 }
 
 /** Prove the driver builds AND decides+records BEFORE any real Codex invocation. */
-export function driverSelfTest(outDir) {
-  const driver = buildDriver();
+export function driverSelfTest(outDir, cache) {
+  const driver = buildDriver(cache);
   const ledger = join(outDir, 'selftest-ledger.jsonl');
   const repo = makeRepo(driver, ledger);
   try {
@@ -425,7 +424,7 @@ function resolveCodex() {
 
 function codexVersion(bin) {
   try {
-    return execFileSync(bin, ['--version'], { encoding: 'utf8' }).trim();
+    return execFileSync(bin, ['--version'], { encoding: 'utf8', timeout: 5000, killSignal: 'SIGKILL', maxBuffer: 1024 * 1024 }).trim();
   } catch {
     return '(unknown)';
   }
@@ -537,9 +536,17 @@ const MUTATIONS = [
 ];
 
 function main() {
+  const args = process.argv.slice(2);
+  if (args.length > 1 || args.some(arg => arg !== '--preflight')) {
+    console.error('usage: codex-probe.mjs [--preflight]');
+    process.exit(2);
+  }
+  const preflight = args.includes('--preflight');
   const bin = resolveCodex();
   const work = mkdtempSync(join(tmpdir(), 'tw-codex-driver-'));
-  const cache = join(ROOT, 'node_modules', '.cache', 'tw-codex-probe');
+  const cacheRoot = join(ROOT, 'node_modules', '.cache', 'tw-codex-probe');
+  mkdirSync(cacheRoot, { recursive: true });
+  const cache = mkdtempSync(join(cacheRoot, 'run-'));
   const cleanup = () => {
     if (process.env.CODEX_KEEP_PROBE_ARTIFACTS === '1') {
       console.error(`Probe artifacts preserved at ${work}`);
@@ -552,7 +559,7 @@ function main() {
   // Layer (b) is always available (CI): prove the driver builds and records before anything.
   let self;
   try {
-    self = driverSelfTest(work);
+    self = driverSelfTest(work, cache);
   } catch (e) {
     console.log(`VERDICT: PARTIAL — probe driver failed to build: ${e && e.message}`);
     console.log('Round 4.1: Not eligible');
@@ -587,6 +594,14 @@ function main() {
   lines.push('Provenance (pinned):');
   for (const [k, v] of Object.entries(prov)) lines.push(`  ${k}: ${v}`);
   if (!gate.full) lines.push(`  provenance gate: INCOMPLETE — ${gate.reasons.join('; ')}`);
+  if (preflight) {
+    console.log(lines.join('\n'));
+    console.log(`PREFLIGHT: ${self.ok && gate.full ? 'READY' : 'INSUFFICIENT'}`);
+    console.log('No model-backed qualification cases executed; configuration checks do not qualify a runtime.');
+    console.log('Round 4.1: Not eligible (preflight only)');
+    cleanup();
+    process.exit(self.ok && gate.full ? 0 : 1);
+  }
 
   // Layer (c): real Codex E2E. Each mutation class is a CONTROL (pass-through hook → mutation
   // MUST land) vs GATED (TamperWard hook → deny, mutation MUST NOT land) pair.

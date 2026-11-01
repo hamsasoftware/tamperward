@@ -31,8 +31,8 @@
 
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
 import { isAbsolute, join } from 'node:path';
+import { readStateFile } from '../disk';
 
 /**
  * Environment for a git command whose answer is trusted.
@@ -45,18 +45,20 @@ export function trustedGitEnv(): NodeJS.ProcessEnv {
   return { ...process.env, GIT_NO_REPLACE_OBJECTS: '1' };
 }
 
-function gitDirOf(cwd: string): string | null {
+function gitPathOf(cwd: string, rel: string): string {
   try {
-    const d = execFileSync('git', ['rev-parse', '--git-dir'], {
+    const d = execFileSync('git', ['rev-parse', '--git-path', rel], {
       cwd,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
       env: trustedGitEnv(),
+      timeout: 1000,
     }).trim();
-    if (!d) return null;
+    if (!d) throw new Error('empty Git path');
     return isAbsolute(d) ? d : join(cwd, d);
-  } catch {
-    return null;
+  } catch (e) {
+    throw new Error('cannot inspect Git rewrite metadata path ' + rel + ': ' +
+      (e instanceof Error ? e.message : String(e)));
   }
 }
 
@@ -66,12 +68,24 @@ function gitDirOf(cwd: string): string | null {
  * `shallow`. Compared, never interpreted — the envelope only needs to know
  * whether it moved.
  *
- * Unreadable inputs hash to a distinct marker rather than to "absent", so
- * losing the ability to look is not silently the same as looking and finding
- * nothing.
+ * Unreadable inputs prevent a fingerprint altogether. A stable unreadable
+ * marker at both endpoints would otherwise permit a false clean comparison.
  */
 export function objectRewriteState(cwd: string): string {
   const parts: string[] = [];
+  const metadataParts: string[] = [];
+  // Resolve Git's effective paths, including the common directory of a linked
+  // worktree. Inspect before for-each-ref: Git itself can consume shallow and
+  // graft metadata, so a FIFO must not hold this command indefinitely.
+  for (const rel of ['info/grafts', 'shallow']) {
+    const path = gitPathOf(cwd, rel);
+    try {
+      metadataParts.push(`${rel}:` + (readStateFile(path)?.trim() ?? ''));
+    } catch (e) {
+      throw new Error('cannot inspect Git rewrite metadata ' + rel + ': ' +
+        (e instanceof Error ? e.message : String(e)));
+    }
+  }
   try {
     parts.push(
       'replace:' +
@@ -80,23 +94,14 @@ export function objectRewriteState(cwd: string): string {
           encoding: 'utf8',
           stdio: ['ignore', 'pipe', 'pipe'],
           env: trustedGitEnv(),
+          timeout: 3000,
+          maxBuffer: 1024 * 1024,
         }).trim(),
     );
-  } catch {
-    parts.push('replace:<unreadable>');
+  } catch (e) {
+    throw new Error('cannot inspect Git rewrite metadata replace refs: ' +
+      (e instanceof Error ? e.message : String(e)));
   }
-  const dir = gitDirOf(cwd);
-  for (const rel of ['info/grafts', 'shallow']) {
-    if (dir === null) {
-      parts.push(`${rel}:<no-git-dir>`);
-      continue;
-    }
-    const p = join(dir, rel);
-    try {
-      parts.push(`${rel}:` + (existsSync(p) ? readFileSync(p, 'utf8').trim() : ''));
-    } catch {
-      parts.push(`${rel}:<unreadable>`);
-    }
-  }
+  parts.push(...metadataParts);
   return createHash('sha256').update(parts.join('\n')).digest('hex');
 }

@@ -6,7 +6,7 @@
 
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { canReuseAdjacentDependencyAttestation, runEnvelope, parseRun, trustedLinuxPython } from '../src/cli/run';
@@ -66,6 +66,43 @@ const run = (cwd: string, argv: string[], extra: Partial<Parameters<typeof runEn
   runEnvelope({ cwd, cmd: CMD, budget: 30, argv, ...extra });
 
 describe('tamperward run — the enforcement envelope', () => {
+  it.skipIf(!rootless)('reports an unreadable post-agent commit as unavailable adjudication (#800)', () => {
+    const cwd = repo(true);
+    const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd, encoding: 'utf8' }).trim();
+    const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    try {
+      expect(run(cwd, sh('true'), {
+        json: true,
+        onBeforeAdjudication: () => rmSync(join(cwd, '.git', 'objects', head.slice(0, 2), head.slice(2))),
+      })).toBe(2);
+      expect(JSON.parse(stdout.mock.calls.map(call => String(call[0])).join(''))).toMatchObject({
+        verdict: 'CANNOT_ADJUDICATE', reason: 'CHECK_DIFF_UNJUDGEABLE', exit_code: 2, complete: false,
+      });
+      expect(stderr.mock.calls.map(call => String(call[0])).join('')).not.toContain('HISTORY_REWRITE');
+    } finally {
+      stdout.mockRestore();
+      stderr.mockRestore();
+    }
+  }, 20000);
+
+  it('refuses unreadable Git metadata before starting the agent (#798)', () => {
+    const cwd = repo(true);
+    symlinkSync('/dev/zero', join(cwd, '.git', 'shallow'));
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    try {
+      expect(run(cwd, sh('touch agent-ran'))).toBe(2);
+      expect(stderr.mock.calls.map(call => String(call[0])).join('')).toContain('cannot inspect Git rewrite metadata shallow');
+      expect(existsSync(join(cwd, 'agent-ran'))).toBe(false);
+    } finally {
+      stderr.mockRestore();
+    }
+  });
+
+  it.skipIf(!rootless)('refuses unreadable Git metadata installed by the agent (#798)', () => {
+    const cwd = repo(true);
+    expect(run(cwd, sh('ln -s /dev/zero .git/shallow'))).toBe(2);
+  });
   it.skipIf(!rootless)('honest fix, agent exits 0 → green means green (exit 0)', () => {
     const cwd = repo();
     expect(run(cwd, sh(`echo "module.exports = 42;" > src.js`))).toBe(0);

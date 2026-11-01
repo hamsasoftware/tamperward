@@ -1,5 +1,150 @@
 # Changelog
 
+## [2.52.1] — 2026-11-01
+
+### Fixed
+
+- Doctor checks the configured digest-pinned container backend through the shared read-only authority preflight before reporting container readiness. Missing Docker or images stay blocked without pulling or starting a container (#803).
+- Exercise doctor capability output on the existing Linux, macOS and Windows platform matrix while retaining the Linux-only lifecycle authority requirement.
+
+## [2.52.0] — 2026-11-01
+
+### Added
+
+- `check --format sarif` and `verify --format sarif` emit SARIF 2.1.0 with a published versioned rule vocabulary, effective severity, known source locations and explicit incomplete-analysis status. Existing verdicts and exit codes are retained (#794).
+- SARIF run properties retain the verdict and a fresh same-invocation receipt digest; absent signed-verdict evidence remains explicit. Document a pinned GitHub code-scanning upload step.
+
+## [2.51.0] — 2026-11-01
+
+### Added
+
+- Add opt-in v2 suite-evidence signing and an executable admission consumer (#801).
+  Bind the protected producer artifact, repository, candidate, baseline, policy,
+  verifier, suite assurance, explicit exception and fresh request scope to a
+  trusted Ed25519 signer without changing default v1 statements.
+
+## [2.50.0] — 2026-11-01
+
+### Added
+
+- Report the shared suite-exit-only assurance and residual limits in verification,
+  receipts and reconciliation, preserving older receipts and their digest encoding.
+- Add completed verification producer bindings for the actual candidate, baseline,
+  policy and verifier configuration without authenticating unsigned reports (#801).
+
+## [2.49.4] — 2026-11-01
+
+### Fixed
+
+- Emit each receipt reconciliation workflow annotation once, preserving order and verdict.
+
+## [2.49.3] — 2026-11-01
+
+### Changed
+
+- Share candidate snapshot materialization between verification and the external
+  oracle without changing its entry, dependency or symlink semantics (#800).
+  Record the trusted I/O inventory, named invariants and current limitations
+  without changing existing read, copy or error semantics.
+
+## [2.49.2] — 2026-11-01
+
+### Fixed
+
+- Bound the run envelope's Git subprocesses and terminate stalled reads (#800).
+  Unavailable ancestry evidence now yields CANNOT_ADJUDICATE rather than a
+  HISTORY_REWRITE finding; a genuine nonancestor retains the existing verdict.
+
+## [2.49.1] — 2026-10-30
+
+### Added
+
+- Report command-specific readiness in doctor machine/terminal output and
+  onboarding (#803). A shared conservative model distinguishes static checks,
+  local and container verification, Linux lifecycle supervision and protected CI.
+  Unprobed Docker and repository authority remain UNVERIFIED, while the existing
+  global authoritative verdict and BROKEN checks keep their meaning.
+
+## [2.49.0] — 2026-10-30
+
+### Added
+
+- Opt-in `oracle --schema-version 2` reports safe, structured manifest, backend,
+  snapshot, cleanup and infrastructure failure reasons (#802). The default
+  `oracle-v1` schema and reason vocabulary remain compatible. V2 preserves
+  host-completed counts and never includes private exception details or a binding
+  on a failed post-evaluation check.
+
+## [2.48.4] — 2026-10-30
+
+### Fixed
+
+- Preserve host-completed oracle case counts when candidate or infrastructure
+  checks fail after evaluation (#802). Finish snapshot cleanup before emitting a
+  result, so a cleanup failure cannot leave a VERIFIED report behind. Such
+  failures remain CANNOT_VERIFY with the v1 reason vocabulary and no binding.
+
+## [2.48.3] — 2026-10-30
+
+### Changed
+
+- Extracted pure GitHub authority evidence evaluation from doctor orchestration
+  into a directly importable module (#800). The doctor export and evaluation
+  behaviour remain compatible; a boundary regression keeps transport, I/O and
+  CLI rendering out of the evaluator.
+
+## [2.48.2] — 2026-10-30
+
+### Fixed
+
+- Bound local workflow and version-pin reads in `doctor` using regular-file,
+  no-follow inspection (#800). A FIFO, device, symbolic link or oversized
+  authority file cannot hold the diagnostic indefinitely; unreadable version
+  pins are reported as BROKEN instead of being treated as absent.
+
+## [2.48.1] — 2026-10-30
+
+### Fixed
+
+- Bound Git graft/shallow metadata reads and replace-ref inspection for the
+  `run` object-layer fingerprint (#798). Reject irregular, linked, unreadable
+  or oversized metadata before Git can consume it, and resolve effective paths
+  in linked worktrees. Unavailable evidence now fails closed as cannot
+  adjudicate rather than comparing stable unreadable markers; normal digest
+  ordering and the v1 machine reason vocabulary remain unchanged.
+
+## [2.48.0] — 2026-10-30
+
+### Added
+
+- Discover every applicable GitHub ruleset from protected-branch rule provenance,
+  including inherited organisation rules and bounded pagination (#797). Unknown
+  provenance or unavailable bypass details cannot certify repository authority.
+  `doctor --github` accepts `--required-checks A,B` for an exact downstream
+  contract and `--check-contract tamperward-repo` for this repository's expanded
+  CI list. The expanded list remains the default for `hexrift/tamperward`;
+  downstream repositories default to the `tamperward` status context.
+
+## [2.47.2] — 2026-10-30
+
+### Fixed
+
+- Reject unknown fields inside verifier, sign-off and per-rule policy mappings
+  instead of silently discarding intended protection (#799). Errors identify the
+  complete key path; repository and pinned organisation policy share validation.
+  Supported sign-off aliases, rule identifiers and protected categories remain
+  compatible. Previously ignored misspellings must now be corrected.
+
+## [2.47.1] — 2026-10-30
+
+### Fixed
+
+- Preserve adverse and unknown GitHub authority evidence across classic branch-
+  protection fallback in `doctor --github` (#795). Missing/malformed bypass lists
+  and unavailable branch-rule evidence cannot certify authority; fallback retains
+  the same required-check contract. Collector-level regressions exercise both
+  successful composition and refusal paths.
+
 ## [2.47.0] — 2026-10-22
 
 ### Added

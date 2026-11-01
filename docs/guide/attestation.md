@@ -74,3 +74,16 @@ of the old trusted key, not a repository edit or a candidate-controlled key id.
 
 Signed transport does not qualify a second runtime or enforce an organisation policy
 floor; those are separate M5 requirements.
+
+For an admission decision, follow the [v1 admission consumer contract](./admission-consumer.md).
+The v1 signature does not include the receipt's tree fingerprint or an assurance
+level; consumers must not infer either from the signed verdict alone.
+
+
+For opt-in completed suite evidence, use `attestation sign --schema-version 2`
+with `--evidence` and its protected-producer `--sha256`, followed by
+`attestation admit`. The [v2 producer and consumer contract](./admission-consumer.md#opt-in-v2-producer-and-executable-consumer)
+binds the actual candidate tree, repository, policy and verifier configuration,
+completion, `suite-exit-only` assurance, explicit exception and fresh request scope.
+V1 remains the default. Neither format upgrades suite exits into an independent
+semantic oracle.

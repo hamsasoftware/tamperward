@@ -213,7 +213,7 @@ describe('local verification receipt emission (#601)', () => {
     verify(cwd);
     const receipt = storedReceipt(cwd);
     expect(Object.keys(receipt).sort()).toEqual(
-      ['binding', 'evidence_digest', 'schema_version', 'stages', 'tw_version', 'verdict', 'verified_at'].sort(),
+      ['binding', 'evidence_digest', 'oracle_assurance', 'schema_version', 'stages', 'tw_version', 'verdict', 'verified_at'].sort(),
     );
     const raw = readFileSync(receiptPath(cwd)!, 'utf8');
     // No absolute local path (the checkout dir), no command body, no env leakage.

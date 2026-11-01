@@ -1,0 +1,161 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "tamperward/v1/no-verify",
+      "name": "no-verify",
+      "level": "error",
+      "description": "Verification hooks were bypassed."
+    },
+    {
+      "id": "tamperward/v1/ts-any-cast",
+      "name": "ts-any-cast",
+      "level": "error",
+      "description": "An explicit any cast or TypeScript suppression weakens type checking."
+    },
+    {
+      "id": "tamperward/v1/ts-any-launder",
+      "name": "ts-any-launder",
+      "level": "warning",
+      "description": "An any annotation or generic can weaken type checking."
+    },
+    {
+      "id": "tamperward/v1/ts-cast-growth",
+      "name": "ts-cast-growth",
+      "level": "warning",
+      "description": "Type assertions grew in source code."
+    },
+    {
+      "id": "tamperward/v1/lint-suppression",
+      "name": "lint-suppression",
+      "level": "error",
+      "description": "A lint suppression weakens static checks."
+    },
+    {
+      "id": "tamperward/v1/test-skip",
+      "name": "test-skip",
+      "level": "error",
+      "description": "A test was skipped or excluded from execution."
+    },
+    {
+      "id": "tamperward/v1/coverage-lowering",
+      "name": "coverage-lowering",
+      "level": "error",
+      "description": "A coverage threshold was lowered."
+    },
+    {
+      "id": "tamperward/v1/config-weakening",
+      "name": "config-weakening",
+      "level": "warning",
+      "description": "A verification configuration was weakened."
+    },
+    {
+      "id": "tamperward/v1/coverage-exclusion",
+      "name": "coverage-exclusion",
+      "level": "warning",
+      "description": "Source code was excluded from coverage measurement."
+    },
+    {
+      "id": "tamperward/v1/ci-tampering",
+      "name": "ci-tampering",
+      "level": "error",
+      "description": "A CI integrity gate was weakened."
+    },
+    {
+      "id": "tamperward/v1/hook-tampering",
+      "name": "hook-tampering",
+      "level": "error",
+      "description": "A hook, policy or enforcement integration was weakened."
+    },
+    {
+      "id": "tamperward/v1/test-deletion",
+      "name": "test-deletion",
+      "level": "error",
+      "description": "Protected tests were deleted or moved out of protection."
+    },
+    {
+      "id": "tamperward/v1/test-content-removal",
+      "name": "test-content-removal",
+      "level": "error",
+      "description": "Content was removed from a protected test."
+    },
+    {
+      "id": "tamperward/v1/test-support",
+      "name": "test-support",
+      "level": "warning",
+      "description": "Protected test support content was removed."
+    },
+    {
+      "id": "tamperward/v1/snapshot-rewrite",
+      "name": "snapshot-rewrite",
+      "level": "warning",
+      "description": "A protected snapshot was rewritten."
+    },
+    {
+      "id": "tamperward/v1/snapshot-only-rewrite",
+      "name": "snapshot-only-rewrite",
+      "level": "warning",
+      "description": "A snapshot was rewritten without an accompanying source change."
+    },
+    {
+      "id": "tamperward/v1/assertion-weakening",
+      "name": "assertion-weakening",
+      "level": "warning",
+      "description": "A test assertion was weakened."
+    },
+    {
+      "id": "tamperward/v1/guard-removal",
+      "name": "guard-removal",
+      "level": "warning",
+      "description": "A source guard was removed."
+    },
+    {
+      "id": "tamperward/v1/transient-protected-mutation",
+      "name": "transient-protected-mutation",
+      "level": "warning",
+      "description": "A protected file was changed and restored during execution."
+    },
+    {
+      "id": "tamperward/v1/hidden-drift",
+      "name": "hidden-drift",
+      "level": "error",
+      "description": "A protected path could not be judged by content."
+    },
+    {
+      "id": "tamperward/v1/detector-error",
+      "name": "detector-error",
+      "level": "error",
+      "description": "A detector failed; the change could not be judged completely."
+    },
+    {
+      "id": "tamperward/v1/verify-masked-failure",
+      "name": "verify-masked-failure",
+      "level": "error",
+      "description": "The visible suite passed but the suite restored from the trusted base failed."
+    },
+    {
+      "id": "tamperward/v1/verify-suite-red",
+      "name": "verify-suite-red",
+      "level": "error",
+      "description": "The visible suite failed."
+    },
+    {
+      "id": "tamperward/v1/verify-budget-exceeded",
+      "name": "verify-budget-exceeded",
+      "level": "error",
+      "description": "Verification exceeded its configured budget."
+    },
+    {
+      "id": "tamperward/v1/verify-cannot-verify",
+      "name": "verify-cannot-verify",
+      "level": "error",
+      "description": "A trusted verification result could not be established."
+    },
+    {
+      "id": "tamperward/v1/unrecognized-rule",
+      "name": "unrecognized-rule",
+      "level": "error",
+      "description": "An unrecognized integrity rule reported a finding."
+    }
+  ]
+}

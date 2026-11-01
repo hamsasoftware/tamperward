@@ -13,7 +13,13 @@ import { machineOutput, type MachineSchemaVersion } from '../machine-output';
 import { execFailure, isRecord } from '../narrow';
 import { repoRoot } from '../repo-context';
 import { colourEnabled } from './render/text';
+import { evaluateGitHubProtection, REPOSITORY_REQUIRED_CHECKS } from '../github-authority';
+export { evaluateGitHubProtection, REPOSITORY_REQUIRED_CHECKS } from '../github-authority';
+export type { GitHubProtectionSnapshot } from '../github-authority';
+import { readStateFile } from '../disk';
 import { paint, severityColour, BOLD, type Severity } from './render/status';
+import { capabilityReadiness, type CapabilityReadiness } from '../capability-readiness';
+import { prepareVerifierBackend } from '../verifier-backend';
 
 export interface DoctorOpts {
   cwd?: string;
@@ -27,6 +33,9 @@ export interface DoctorOpts {
   repo?: string;
   /** Protected branch. Defaults to GITHUB_BASE_REF or GitHub's default branch. */
   branch?: string;
+  /** Exact required status contexts, or the named repository contract. */
+  requiredChecks?: string[];
+  checkContract?: 'tamperward-repo';
   /** Emit one machine-readable posture document instead of prose. */
   json?: boolean;
 }
@@ -44,6 +53,7 @@ export interface DoctorReport {
   command: 'doctor';
   authoritative: boolean;
   checks: DoctorCheck[];
+  capabilities: CapabilityReadiness[];
 }
 
 /** @internal Pure platform rendering for tests; runtime calls trustedLinuxPython itself. */
@@ -100,6 +110,7 @@ export interface DoctorOutcome {
   code: 0 | 2;
   authoritative: boolean;
   checks: DoctorCheck[];
+  verifierBackend?: 'local' | 'container';
   /** Set when doctor stopped early: the failing check id and its message. */
   failure?: { id: string; message: string };
   /** Human summary lines runDoctor prints before the check report on success. */
@@ -139,10 +150,8 @@ function wiringState(status: string, authority: boolean): DoctorState {
 }
 
 function pinsInFile(path: string): string[] {
-  if (!existsSync(path)) return [];
-  let src = '';
-  try { src = readFileSync(path, 'utf8'); } catch { return []; }
-  return Array.from(src.matchAll(/\btamperward@((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))\b/g), (m) => m[1]);
+  const src = readStateFile(path);
+  return src === null ? [] : Array.from(src.matchAll(/\btamperward@((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))\b/g), (m) => m[1]);
 }
 
 function permissionWrites(value: unknown): string[] | null {
@@ -158,6 +167,24 @@ function permissionWrites(value: unknown): string[] | null {
     .map(([name, permission]) => `${name}=${String(permission)}`);
 }
 
+function containerPreflightCheck(verify: ReturnType<typeof loadPolicy>['verify']): DoctorCheck {
+  try {
+    const backend = prepareVerifierBackend(verify);
+    return {
+      id: 'container-preflight',
+      state: backend.available ? 'OK' : 'BROKEN',
+      detail: backend.available
+        ? `Docker authority and locally present digest-pinned image ${backend.image} passed the read-only preflight; verify repeats it before each execution`
+        : `${backend.reason ?? 'Docker authority preflight failed'}; fix Docker authority and preload the pinned image, then rerun tamperward doctor`,
+    };
+  } catch (error) {
+    return {
+      id: 'container-preflight', state: 'BROKEN',
+      detail: `Docker authority preflight could not complete: ${error instanceof Error ? error.message : String(error)}; inspect Docker and rerun tamperward doctor`,
+    };
+  }
+}
+
 function workflowPermissionCheck(
   cwd: string,
   workflowRels: string[] = ['.github/workflows/tamperward.yml'],
@@ -167,14 +194,19 @@ function workflowPermissionCheck(
 
   for (const rel of workflowRels) {
     const path = resolve(cwd, rel);
-    if (!existsSync(path)) {
+    let text: string | null;
+    try { text = readStateFile(path); } catch (e) {
+      broken.push(`${rel} cannot be inspected (${e instanceof Error ? e.message : String(e)})`);
+      continue;
+    }
+    if (text === null) {
       broken.push(`${rel} is missing`);
       continue;
     }
 
     let doc: unknown;
     try {
-      doc = yaml.parse(readFileSync(path, 'utf8'));
+      doc = yaml.parse(text);
     } catch (e) {
       broken.push(`${rel} is not valid YAML (${e instanceof Error ? e.message : String(e)})`);
       continue;
@@ -311,15 +343,23 @@ export function collectLocalPosture(
   addWiring('codeowners', 'codeowners', true);
   checks.push(workflowPermissionCheck(cwd, authorityWorkflows));
 
-  const pins = [
-    ...pinsInFile(join(cwd, '.claude', 'settings.json')),
-    ...pinsInFile(join(cwd, '.git', 'hooks', 'pre-commit')),
-    ...pinsInFile(join(cwd, '.husky', 'pre-commit')),
-  ];
+  let pins: string[] = [];
+  let pinError: string | null = null;
+  try {
+    pins = [
+      ...pinsInFile(join(cwd, '.claude', 'settings.json')),
+      ...pinsInFile(join(cwd, '.git', 'hooks', 'pre-commit')),
+      ...pinsInFile(join(cwd, '.husky', 'pre-commit')),
+    ];
+  } catch (e) {
+    pinError = e instanceof Error ? e.message : String(e);
+  }
   const below = pins.filter((pin) => (compareVersions(pin, TW_VERSION) ?? 0) < 0);
   const above = pins.filter((pin) => (compareVersions(TW_VERSION, pin) ?? 0) < 0);
   checks.push(
-    below.length
+    pinError
+      ? { id: 'binary-version', state: 'BROKEN', detail: `cannot inspect version pins: ${pinError}` }
+      : below.length
       ? { id: 'binary-version', state: 'BROKEN', detail: `wiring pins older TamperWard version(s): ${Array.from(new Set(below)).join(', ')}; running binary is ${TW_VERSION}` }
       : above.length
         ? { id: 'binary-version', state: 'WARN', detail: `repository wiring targets newer TamperWard version(s): ${Array.from(new Set(above)).join(', ')}; running binary is ${TW_VERSION}` }
@@ -338,9 +378,10 @@ export function collectLocalPosture(
       state: backend === 'container' ? 'OK' : 'WARN',
       detail:
         backend === 'container'
-          ? `isolated-container verifier; budget ${policy.verify.budget}s/stage; ${inputs} declared verify.inputs glob(s); runtime/image availability is checked by verify`
+          ? `isolated-container verifier; budget ${policy.verify.budget}s/stage; ${inputs} declared verify.inputs glob(s); container-preflight reports runtime/image authority and verify rechecks it`
           : `checkpointed-local verifier; budget ${policy.verify.budget}s/stage; ${inputs} declared verify.inputs glob(s); same-host/self-restoring mutation remains a documented residual`,
     });
+    if (backend === 'container') checks.push(containerPreflightCheck(policy.verify));
   }
 
   checks.push(lifecyclePlatformCheck());
@@ -371,9 +412,10 @@ function observerCheck(cwd: string): DoctorCheck {
   };
 }
 
-function emitReport(opts: DoctorOpts, checks: DoctorCheck[], authoritative: boolean): void {
+function emitReport(opts: DoctorOpts, checks: DoctorCheck[], authoritative: boolean, verifierBackend?: 'local' | 'container'): void {
+  const capabilities = capabilityReadiness({ checks, platform: process.platform, verifierBackend });
   if (opts.json) {
-    const report: DoctorReport = machineOutput({ command: 'doctor' as const, authoritative, checks });
+    const report: DoctorReport = machineOutput({ command: 'doctor' as const, authoritative, checks, capabilities });
     process.stdout.write(JSON.stringify(report) + '\n');
     return;
   }
@@ -387,100 +429,9 @@ function emitReport(opts: DoctorOpts, checks: DoctorCheck[], authoritative: bool
       process.stdout.write(`tamperward doctor: ${tag} ${check.id} — ${check.detail}\n`);
     }
   }
-}
-
-export interface GitHubProtectionSnapshot {
-  rules?: unknown;
-  branchProtection?: unknown;
-  /** Bypass actors from the active ruleset detail, when available. */
-  bypassActors?: unknown;
-}
-
-export const REPOSITORY_REQUIRED_CHECKS = [
-  'typecheck',
-  'test (20)',
-  'test (22)',
-  'test (24)',
-  'build',
-  'gate',
-  // platform-contract is a matrix over os: [ubuntu-latest, macos-latest, windows-latest]
-  // (see .github/workflows/ci.yml). GitHub publishes one check context per matrix cell,
-  // named "<job> (<os>)"; the bare job name is never a real context, so it must be
-  // enumerated per cell or the required-status check reports a false authority failure.
-  'platform-contract (ubuntu-latest)',
-  'platform-contract (macos-latest)',
-  'platform-contract (windows-latest)',
-  'harness-core',
-  'round4-harness',
-  'pilot-provisioning',
-  'verifier-container',
-] as const;
-
-export function evaluateGitHubProtection(
-  snapshot: GitHubProtectionSnapshot,
-  requiredCheck = 'tamperward',
-  requiredChecks: readonly string[] = [requiredCheck],
-): string[] {
-  let hasCodeOwnerReview = false;
-  let dismissesStaleReviews = false;
-  const presentChecks = new Set<string>();
-
-  if (Array.isArray(snapshot.rules)) {
-    for (const raw of snapshot.rules) {
-      const rule = asMapping(raw);
-      const params = asMapping(rule?.parameters);
-      if (!rule || !params) continue;
-
-      if (rule.type === 'pull_request') {
-        if (params.require_code_owner_review === true) hasCodeOwnerReview = true;
-        if (params.dismiss_stale_reviews_on_push === true) dismissesStaleReviews = true;
-      }
-
-      if (rule.type === 'required_status_checks') {
-        const checks = params.required_status_checks;
-        if (Array.isArray(checks)) {
-          for (const rawCheck of checks) {
-            const check = asMapping(rawCheck);
-            if (typeof check?.context === 'string') presentChecks.add(check.context);
-          }
-        }
-      }
-    }
+  for (const capability of capabilities) {
+    process.stdout.write(`tamperward doctor: ${capability.id} ${capability.state} — ${capability.next}\n`);
   }
-
-  const classic = asMapping(snapshot.branchProtection);
-  const reviews = asMapping(classic?.required_pull_request_reviews);
-  if (reviews?.require_code_owner_reviews === true) hasCodeOwnerReview = true;
-  if (reviews?.dismiss_stale_reviews === true) dismissesStaleReviews = true;
-
-  const status = asMapping(classic?.required_status_checks);
-  if (status) {
-    const contexts = status.contexts;
-    if (Array.isArray(contexts)) {
-      for (const context of contexts) if (typeof context === 'string') presentChecks.add(context);
-    }
-    const checks = status.checks;
-    if (Array.isArray(checks)) {
-      for (const rawCheck of checks) {
-        const check = asMapping(rawCheck);
-        if (typeof check?.context === 'string') presentChecks.add(check.context);
-      }
-    }
-  }
-
-  const findings: string[] = [];
-  const missing = requiredChecks.filter((check) => !presentChecks.has(check));
-  if (missing.length) findings.push(
-    missing.length === 1
-      ? 'require the ' + missing[0] + ' status check'
-      : 'require status checks: ' + missing.join(', '),
-  );
-  if (!hasCodeOwnerReview) findings.push('require Code Owner review');
-  if (!dismissesStaleReviews) findings.push('dismiss stale pull request approvals on new pushes');
-  if (Array.isArray(snapshot.bypassActors) && snapshot.bypassActors.length > 0) {
-    findings.push('remove unintended ruleset bypass actors');
-  }
-  return findings;
 }
 
 function gitText(cwd: string, args: string[]): string | null {
@@ -563,9 +514,11 @@ function githubApi(cwd: string, endpoint: string): unknown {
   }
 }
 
-function githubAuthority(
+/** @internal The transport seam exercises collection and fallback without live API access. */
+export function githubAuthority(
   opts: DoctorOpts,
   cwd: string,
+  readApi: typeof githubApi = githubApi,
 ): { repo: string; branch: string; findings: string[] } {
   const repo = opts.repo ?? inferGitHubRepo(cwd);
   if (!repo || !/^[^/\s]+\/[^/\s]+$/.test(repo)) {
@@ -576,54 +529,93 @@ function githubAuthority(
 
   let branch = opts.branch ?? process.env.GITHUB_BASE_REF ?? '';
   if (!branch) {
-    const meta = asMapping(githubApi(cwd, 'repos/' + repo));
+    const meta = asMapping(readApi(cwd, 'repos/' + repo));
     if (typeof meta?.default_branch === 'string') branch = meta.default_branch;
   }
   if (!branch) throw new Error('cannot determine protected branch; pass --branch BRANCH');
 
-  let rules: unknown;
+  if (opts.checkContract && opts.requiredChecks) {
+    throw new Error('choose either --check-contract or --required-checks');
+  }
+  const requiredChecks = opts.checkContract === 'tamperward-repo' ||
+    (repo.toLowerCase() === 'hexrift/tamperward' && !opts.requiredChecks)
+    ? REPOSITORY_REQUIRED_CHECKS
+    : opts.requiredChecks ?? ['tamperward'];
+  if (requiredChecks.length === 0 || requiredChecks.some(check => !check.trim())) {
+    throw new Error('required status checks must be nonempty');
+  }
+
+  let rules: unknown[] | undefined;
   let rulesError: Error | null = null;
   try {
-    rules = githubApi(cwd, 'repos/' + repo + '/rules/branches/' + encodeURIComponent(branch));
+    rules = [];
+    for (let page = 1; page <= 10; page++) {
+      const batch = readApi(cwd, 'repos/' + repo + '/rules/branches/' + encodeURIComponent(branch) + '?per_page=100&page=' + page);
+      if (!Array.isArray(batch)) throw new Error('branch rules response is not an array');
+      rules.push(...batch);
+      if (batch.length < 100) break;
+      if (page === 10) throw new Error('branch rules exceed the 1000-rule inspection limit');
+    }
   } catch (e) {
     rulesError = e instanceof Error ? e : new Error(String(e));
   }
 
-  let bypassActors: unknown;
-  let rulesetInspectionError: Error | null = null;
-  try {
-    const rulesets = githubApi(cwd, 'repos/' + repo + '/rulesets');
-    const active = Array.isArray(rulesets)
-      ? rulesets.find((raw) => {
-        const item = asMapping(raw);
-        return item?.name === 'main' && item?.target === 'branch' && item?.enforcement === 'active';
-      })
-      : null;
-    const id = asMapping(active)?.id;
-    if (typeof id !== 'number') {
-      rulesetInspectionError = new Error('no active main branch ruleset was found');
-    } else {
-      const detail = asMapping(githubApi(cwd, 'repos/' + repo + '/rulesets/' + id));
-      bypassActors = detail?.bypass_actors;
+  const inspectionFindings: string[] = [];
+  const sources = new Map<number, string>();
+  for (const raw of rules ?? []) {
+    const item = asMapping(raw);
+    const id = item?.ruleset_id;
+    const source = item?.ruleset_source;
+    const sourceType = item?.ruleset_source_type;
+    if (!Number.isSafeInteger(id) || (id as number) <= 0 || typeof source !== 'string' ||
+        (sourceType !== 'Repository' && sourceType !== 'Organization')) {
+      inspectionFindings.push('branch rule has unknown ruleset provenance');
+      continue;
     }
-  } catch (e) {
-    rulesetInspectionError = e instanceof Error ? e : new Error(String(e));
+    const endpoint = sourceType === 'Organization'
+      ? /^[-\w]+$/.test(source) ? 'orgs/' + source + '/rulesets/' + id : null
+      : source === repo ? 'repos/' + repo + '/rulesets/' + id : null;
+    if (!endpoint || (sources.has(id as number) && sources.get(id as number) !== endpoint)) {
+      inspectionFindings.push('branch rule has inconsistent ruleset provenance');
+      continue;
+    }
+    sources.set(id as number, endpoint);
   }
-
-  let findings = evaluateGitHubProtection(
-    { rules, bypassActors },
-    'tamperward',
-    REPOSITORY_REQUIRED_CHECKS,
-  );
-  if (rulesetInspectionError) {
-    findings.push('active main ruleset bypass actors could not be verified: ' + rulesetInspectionError.message);
+  let bypassActors: unknown = [];
+  if (inspectionFindings.length > 0 || rulesError) bypassActors = undefined;
+  for (const [id, endpoint] of sources) {
+    try {
+      const detail = asMapping(readApi(cwd, endpoint));
+      if (!Array.isArray(detail?.bypass_actors)) {
+        inspectionFindings.push('ruleset ' + id + ' bypass actors could not be verified');
+        if (!Array.isArray(bypassActors) || bypassActors.length === 0) bypassActors = undefined;
+      } else if (detail.bypass_actors.length > 0) {
+        bypassActors = detail.bypass_actors;
+      }
+    } catch (e) {
+      inspectionFindings.push('ruleset ' + id + ' bypass actors could not be verified: ' +
+        (e instanceof Error ? e.message : String(e)));
+      if (!Array.isArray(bypassActors) || bypassActors.length === 0) bypassActors = undefined;
+    }
   }
+  // Fallback can supply a missing requirement, but cannot discard adverse or
+  // unknown observations or silently replace the requested check contract.
+  if (rulesError) inspectionFindings.push('branch rules could not be verified: ' + rulesError.message);
+  const evaluate = (branchProtection?: unknown): string[] => [
+    ...evaluateGitHubProtection(
+      { rules, bypassActors, branchProtection },
+      'tamperward',
+      requiredChecks,
+    ),
+    ...inspectionFindings,
+  ];
+  let findings = evaluate();
   if (findings.length === 0) return { repo, branch, findings };
 
   let branchProtection: unknown;
   let classicError: Error | null = null;
   try {
-    branchProtection = githubApi(
+    branchProtection = readApi(
       cwd,
       'repos/' + repo + '/branches/' + encodeURIComponent(branch) + '/protection',
     );
@@ -631,7 +623,7 @@ function githubAuthority(
     classicError = e instanceof Error ? e : new Error(String(e));
   }
 
-  findings = evaluateGitHubProtection({ rules, branchProtection });
+  findings = evaluate(branchProtection);
   if (findings.length > 0 && rules === undefined && branchProtection === undefined) {
     throw new Error(
       'cannot inspect GitHub repository authority. Rules API: ' +
@@ -693,12 +685,14 @@ export function diagnose(opts: DoctorOpts = {}): DoctorOutcome {
   }
 
   let postureWorkflows: string[] | undefined = opts.workflow ? [opts.workflow] : undefined;
-  const fail = (id: string, message: string): DoctorOutcome =>
-    failed(
+  const fail = (id: string, message: string): DoctorOutcome => ({
+    ...failed(
       message,
       id,
       collectLocalPosture(cwd, policy, postureWorkflows, Boolean(opts.workflow)),
-    );
+    ),
+    verifierBackend: policy.verify?.backend ?? 'local',
+  });
 
   if (!policy.verify?.command) {
     return fail('verifier', 'trusted policy has no verify.command; generated CI cannot verify this repository');
@@ -733,13 +727,17 @@ export function diagnose(opts: DoctorOpts = {}): DoctorOutcome {
 
   for (const workflowRel of workflowRels) {
     const workflowPath = resolve(cwd, workflowRel);
-    if (!existsSync(workflowPath)) {
+    let workflowText: string | null;
+    try { workflowText = readStateFile(workflowPath); } catch (e) {
+      return fail('ci-verifier', `${workflowRel}: cannot inspect workflow (${e instanceof Error ? e.message : String(e)})`);
+    }
+    if (workflowText === null) {
       return fail('ci-verifier', `${workflowRel}: workflow does not exist`);
     }
 
     let doc: unknown;
     try {
-      doc = yaml.parse(readFileSync(workflowPath, 'utf8'));
+      doc = yaml.parse(workflowText);
     } catch (e) {
       return fail('ci-verifier', 
         `${workflowRel}: workflow is not valid YAML (${e instanceof Error ? e.message : String(e)})`,
@@ -845,6 +843,7 @@ export function diagnose(opts: DoctorOpts = {}): DoctorOutcome {
     code: 0,
     authoritative: !checks.some((x) => x.state === 'BROKEN'),
     checks,
+    verifierBackend: policy.verify?.backend ?? 'local',
     summary,
     ...(github ? { github: { repo: github.repo, branch: github.branch } } : {}),
   };
@@ -854,7 +853,7 @@ export function runDoctor(opts: DoctorOpts = {}): number {
   const outcome = diagnose(opts);
   if (outcome.failure) {
     if (opts.json) {
-      emitReport(opts, outcome.checks, false);
+      emitReport(opts, outcome.checks, false, outcome.verifierBackend);
     } else {
       process.stderr.write(`tamperward doctor: ${outcome.failure.message}\n`);
     }
@@ -863,6 +862,6 @@ export function runDoctor(opts: DoctorOpts = {}): number {
   if (!opts.json) {
     for (const line of outcome.summary) process.stdout.write(line + '\n');
   }
-  emitReport(opts, outcome.checks, outcome.authoritative);
+  emitReport(opts, outcome.checks, outcome.authoritative, outcome.verifierBackend);
   return outcome.code;
 }

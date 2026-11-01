@@ -33,7 +33,7 @@ tamperward check --diff "main...HEAD"      # commit-range view (CI authority)
 | `--staged` | Judge the staged diff. The pre-commit surface. |
 | `--worktree` | Judge working-tree changes (untracked protected files included). |
 | `--diff <base>...<head>` | Judge a commit range. The CI authority; reads policy from the base. |
-| `--format <fmt>` | `text` · `json` · `github` · `auto` (default). See [Machine output](./machine-output.md). |
+| `--format <fmt>` | `text` · `json` · `github` · `sarif` · `auto` (default). See [Machine output](./machine-output.md). |
 | `--json` | Alias for `--format json`. Cannot be combined with `--format`. |
 | `--cwd <dir>` | Run as if from `<dir>`; the repository root is still used. |
 
@@ -73,6 +73,7 @@ tamperward verify --base main
 | `--cmd <command>` | Override the suite command for this run. |
 | `--budget <seconds>` | Per-stage time budget (positive number). |
 | `--json` | Emit one versioned `verify` verdict document; never falls back to prose. |
+| `--format <fmt>` | `json` or `sarif`. Cannot be combined with `--json`. SARIF preserves the verification verdict and exit code. |
 | `--keep` | Keep the two materialised copies and report their paths. |
 | `--cargo-target-root <dir>` | Opt-in local-backend Cargo output cache outside the checkout. Sets distinct `<dir>/visible` and `<dir>/pristine` targets; never copies visible build output into pristine. Refused for isolated-container. |
 | `--require-ancestor` | Refuse a `--base` that is not an ancestor of `HEAD` (fail closed rather than silently anchoring older). |
@@ -197,6 +198,19 @@ tamperward doctor --github --repo owner/repo --branch main
 
 Postures: `READY`, `READY WITH WARNINGS`, `INCOMPLETE`, `BROKEN`. Set `GH_TOKEN` /
 `GITHUB_TOKEN` when GitHub requires authentication.
+Doctor and onboard also show readiness for static checking, local verification,
+container verification, Linux run lifecycle and protected CI. In `doctor --json`,
+the additive `capabilities` array uses `AVAILABLE`, `BLOCKED` or `UNVERIFIED` and
+provides a next action for each. For a configured container verifier, doctor performs
+the same bounded Docker client/daemon and local digest-pinned image checks that verify
+uses. This preflight reads metadata; it does not pull an image or start a container.
+Its named `container-preflight` check supplies the readiness evidence to doctor and
+onboard. `UNVERIFIED` means the relevant authority was not checked: local CI wiring
+without `--github`, for example, does not certify branch protection.
+The global `authoritative` value keeps its
+existing meaning: any BROKEN check leaves it false even when a narrower command
+such as static `check` remains usable. Each command still enforces its own
+preflight at execution time.
 
 ## Verification posture: `status`
 
@@ -646,3 +660,19 @@ explicit stale-lock recovery. Active or unreadable locks fail closed. Flags and 
 - [Policy reference](./policy.md) — the full `.tamperward.yml` contract.
 - [Exit codes](./exit-codes.md) — the single table for `0` / `1` / `2` / `124`.
 - [Environment variables](../guide/environment.md) — every variable the gate reads.
+
+
+## Completed suite admission: `attestation admit`
+
+`attestation sign --schema-version 2 --payload F --evidence F --sha256 H --key K --out F`
+accepts a protected-producer completed `verify --json` report and its trusted SHA-256.
+It checks the actual candidate, policy, verifier, suite completion and explicit
+exception before signing a bounded v2 statement. `attestation admit --statement F
+--key K --expect F` requires a trusted Ed25519 public key and independently current
+request scope. Exit 0 admits the exact `VERIFIED` outcome or explicitly expected
+`MASKED_FAILURE` exception; exit 2 rejects incomplete, stale, mismatched or
+unsupported evidence. The supported assurance is only `suite-exit-only`, with
+candidate code executing inside the suite process. A fresh request nonce prevents
+cross-request replay; atomic one-use consumption belongs to the protected admission
+transaction. V1 signing and verification remain the default. See the
+[admission consumer contract](../guide/admission-consumer.md).

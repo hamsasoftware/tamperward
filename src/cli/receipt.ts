@@ -43,6 +43,7 @@ import { oobToken, oobFromEnv, oobHeadFromEnv, oobHeadProblem } from '../signoff
 import { colourEnabled } from './render/text';
 import { verifyWorkflowCommand, type VerifyAnnotationDetails } from './render/verify-github';
 import { paint, severityColour, BOLD, type Severity } from './render/status';
+import { suiteExitAssurance, type OracleAssuranceReport } from '../oracle-assurance';
 
 export const RECEIPT_SUBCOMMANDS = ['export', 'reconcile'] as const;
 export type ReceiptSubcommand = (typeof RECEIPT_SUBCOMMANDS)[number];
@@ -393,6 +394,7 @@ export interface ReconcileDocument {
   schema_version: MachineSchemaVersion;
   command: 'reconcile';
   result: VerifyVerdict;
+  oracle_assurance: OracleAssuranceReport;
   ci: { verdict: VerifyVerdict };
   local: Reconciliation['local'];
   reconciliation: {
@@ -408,6 +410,7 @@ export function reconcileDocument(r: Reconciliation): ReconcileDocument {
   return machineOutput({
     command: 'reconcile' as const,
     result: r.result,
+    oracle_assurance: suiteExitAssurance(),
     ci: r.ci,
     local: r.local,
     reconciliation: {
@@ -443,7 +446,8 @@ export function renderReconcile(
   // rejects a VERIFIED receipt with a non-pass stage as MALFORMED, so a PRESENT
   // receipt is PASS/PASS/CLEAN; deriving the mark keeps the two in lockstep.
   const stageMark = (value: string, pass: string): string => (value === pass ? tick('✓') : cross('✗'));
-  const lines: string[] = [];
+  const assurance = suiteExitAssurance();
+  const lines: string[] = [`oracle assurance: ${assurance.level} (${assurance.limitation})`, ''];
 
   lines.push('LOCAL');
   if (claimedReceipt) {
@@ -540,12 +544,6 @@ export function runReceiptReconcile(opts: ReceiptReconcileOpts = {}): number {
     if (annotation) process.stdout.write(`${annotation}\n`);
   }
 
-  // Keep --json stdout machine-readable; the generated CI workflow uses the human report.
-  if (!opts.json) {
-    const annotation = verifyWorkflowCommand(ci.verdict, exit);
-    if (annotation) process.stdout.write(`${annotation}\n`);
-  }
-
   // The exit code is CI's verdict, computed above BEFORE the receipt was read.
   return exit;
 }
@@ -560,7 +558,8 @@ function writeJobSummary(
 ): void {
   const path = process.env.GITHUB_STEP_SUMMARY;
   if (!path) return;
-  const md: string[] = ['## TamperWard receipt reconciliation', ''];
+  const assurance = suiteExitAssurance();
+  const md: string[] = ['## TamperWard receipt reconciliation', '', `Oracle assurance: **${assurance.level}** — ${assurance.limitation}`, ''];
   const mark = (value: string, pass: string): string => (value === pass ? '✓' : '✗');
   md.push('### LOCAL');
   if (receipt) {

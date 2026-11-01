@@ -71,6 +71,7 @@ export default defineConfig({
             { text: 'The rules', link: '/guide/rules' },
             { text: 'Enforcement & sign-off', link: '/guide/enforcement' },
             { text: 'Signed verdict statements', link: '/guide/attestation' },
+            { text: 'Admission consumer', link: '/guide/admission-consumer' },
             { text: 'Organisation policy floor', link: '/guide/organisation-policy' },
             { text: 'Independent function oracle', link: '/guide/external-oracle' },
             { text: 'Runtime adapters', link: '/guide/runtime-adapters' },

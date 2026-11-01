@@ -81,3 +81,14 @@ may have no binding and zero completed cases. Reports are unsigned evidence: req
 a trusted job, and use external verdict attestation where needed. A signature alone
 does not prove an oracle actually ran. The original default-verifier limitation remains
 in the [pristine-run threat model](../THREAT-MODEL-pristine-run.md).
+
+For structured failure categories, request `--schema-version 2`. The default stays
+`oracle-v1` for existing consumers; v2 preserves the outcome and count fields and
+adds `MANIFEST_INVALID`, `BACKEND_UNAVAILABLE`, `SNAPSHOT_CHANGED`,
+`CLEANUP_FAILED` and `INFRASTRUCTURE_FAILED` reasons. Runtime errors, timeouts,
+invalid responses and wrong results retain the existing `EXECUTION_FAILED`,
+`BUDGET_EXCEEDED`, `INVALID_RESPONSE` and `ASSERTION_FAILED` reasons. V1 maps the
+new preflight, snapshot and cleanup categories to `EXECUTION_FAILED`. Both versions
+keep details of host paths, commands and exceptions out of the report. Completed
+and passed counts reflect only host-validated responses even if a later integrity
+or cleanup check fails; a failure never carries a verified binding.

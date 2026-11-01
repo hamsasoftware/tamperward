@@ -491,20 +491,20 @@ describe('GitHub human-boundary freshness (#332)', () => {
   ];
 
   it('accepts an active ruleset that binds Code Owner approval to the current pushed diff', () => {
-    expect(evaluateGitHubProtection({ rules: healthyRules })).toEqual([]);
+    expect(evaluateGitHubProtection({ bypassActors: [], rules: healthyRules })).toEqual([]);
   });
 
   it('does not treat last-push approval alone as fresh Code Owner approval', () => {
     const rules = structuredClone(healthyRules);
     (rules[0].parameters as Record<string, unknown>).dismiss_stale_reviews_on_push = false;
     (rules[0].parameters as Record<string, unknown>).require_last_push_approval = true;
-    const findings = evaluateGitHubProtection({ rules });
+    const findings = evaluateGitHubProtection({ bypassActors: [], rules });
     expect(findings).toContain('dismiss stale pull request approvals on new pushes');
     expect(findings).not.toContain('require Code Owner review');
   });
 
   it('accepts equivalent classic branch protection fields', () => {
-    expect(evaluateGitHubProtection({
+    expect(evaluateGitHubProtection({ bypassActors: [],
       branchProtection: {
         required_pull_request_reviews: {
           require_code_owner_reviews: true,
@@ -519,7 +519,7 @@ describe('GitHub human-boundary freshness (#332)', () => {
   });
 
   it('composes effective rules across rulesets and classic branch protection', () => {
-    expect(evaluateGitHubProtection({
+    expect(evaluateGitHubProtection({ bypassActors: [],
       rules: [{
         type: 'required_status_checks',
         parameters: { required_status_checks: [{ context: 'tamperward' }] },
@@ -534,7 +534,7 @@ describe('GitHub human-boundary freshness (#332)', () => {
   });
 
   it('reports every missing repository-authority requirement', () => {
-    expect(evaluateGitHubProtection({ rules: [] })).toEqual([
+    expect(evaluateGitHubProtection({ bypassActors: [], rules: [] })).toEqual([
       'require the tamperward status check',
       'require Code Owner review',
       'dismiss stale pull request approvals on new pushes',
@@ -737,6 +737,11 @@ describe('doctor installation posture (#318)', () => {
     expect(doc.checks.some((x: any) => x.id === 'ci-verifier' && x.state === 'OK')).toBe(true);
     expect(doc.checks.some((x: any) => x.id === 'claude-hooks')).toBe(true);
     expect(doc.checks.some((x: any) => x.id === 'observer')).toBe(true);
+    expect(doc.capabilities).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'container-verify', state: 'UNVERIFIED' }),
+    ]));
+    expect(doc.capabilities.find((x: any) => x.id === 'run-lifecycle')?.state)
+      .toBe(doc.checks.find((x: any) => x.id === 'platform')?.state === 'OK' ? 'AVAILABLE' : 'BLOCKED');
   });
 });
 

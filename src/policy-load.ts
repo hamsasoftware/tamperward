@@ -85,6 +85,15 @@ function validate(r: Record<string, unknown>, where: string): RawPolicy {
     throw new PolicyError(`${where}: ${msg}`);
   }
   const show = (v: unknown): string => JSON.stringify(v) ?? String(v);
+  // Schema fields must be exact at every depth. Rule names and protected
+  // categories remain extensible; misspelled fields must not vanish (#799).
+  function knownKeys(value: Record<string, unknown>, field: string, allowed: readonly string[]): void {
+    for (const key of Object.keys(value)) {
+      if (!allowed.includes(key)) {
+        bad(`unknown key ${field}.${key} (expected one of ${allowed.join(', ')})`);
+      }
+    }
+  }
   // A negated glob in an inclusion list matches EVERY path (see isNegatedGlob):
   // fail closed with the mechanism named, so the author lists the paths instead.
   function refuseNegated(field: string, list: string[]): void {
@@ -112,6 +121,7 @@ function validate(r: Record<string, unknown>, where: string): RawPolicy {
     const rules: Policy['rules'] = {};
     for (const [name, cfg] of Object.entries(r.rules)) {
       if (!isMapping(cfg)) bad(`rules.${name} must be a mapping like { severity: block }, got ${show(cfg)}`);
+      knownKeys(cfg, `rules.${name}`, ['severity', 'enabled', 'exclude']);
       const { severity, enabled, exclude } = cfg;
       if (severity !== undefined && !isSeverity(severity)) {
         bad(`rules.${name}.severity must be "block" or "warn", got ${show(severity)}`);
@@ -148,6 +158,7 @@ function validate(r: Record<string, unknown>, where: string): RawPolicy {
   }
   if (r.signoff !== undefined) {
     if (!isMapping(r.signoff)) bad(`signoff must be a mapping, got ${show(r.signoff)}`);
+    knownKeys(r.signoff, 'signoff', ['required_for', 'requiredFor', 'ledger']);
     const signoff: NonNullable<RawPolicy['signoff']> = {};
     for (const key of ['required_for', 'requiredFor'] as const) {
       const v = r.signoff[key];
@@ -167,6 +178,7 @@ function validate(r: Record<string, unknown>, where: string): RawPolicy {
   }
   if (r.verify !== undefined) {
     if (!isMapping(r.verify)) bad(`verify must be a mapping like { command: "npm test" }, got ${show(r.verify)}`);
+    knownKeys(r.verify, 'verify', ['command', 'budget', 'inputs', 'backend', 'image']);
     const v = r.verify;
     const { command, budget, inputs, backend, image } = v;
     if (command !== undefined && typeof command !== 'string') bad(`verify.command must be a string, got ${show(command)}`);

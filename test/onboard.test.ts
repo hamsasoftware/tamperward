@@ -587,6 +587,8 @@ describe('preflight refusals', () => {
     expect(s.out).toMatch(/LIMITED\s+macOS: check \+ verify work here; .*run.*requires Linux/);
     expect(s.out.match(/macOS:.*run.*requires Linux/g) ?? []).toHaveLength(1);
     expect(s.out).not.toMatch(/subreaper|ECHILD/);
+    expect(s.out).toMatch(/run-lifecycle:.*Linux host/);
+    expect(s.out).toMatch(/container-verify:.*Fix the verifier configuration/);
   });
 
   it('uses colour for interactive status while keeping words as the source of meaning', async () => {

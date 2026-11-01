@@ -268,6 +268,14 @@ evidence rather than assuming it.
 **Three-layer qualification.** Qualification is layered so the parts that *can* run
 deterministically in CI are separated from the part that needs a real Codex box:
 
+Run `node harness/adapters/codex-probe.mjs --preflight` to check the driver and
+explicit runtime/configuration pins before live execution. This mode makes no
+model-backed qualification calls and returns nonzero when pins are incomplete.
+The runtime version lookup has a five-second deadline. Probe cleanup removes only
+the current invocation's cache, preserving other probe drivers.
+It does not establish credential availability, enforcement, runtime eligibility or
+a research freeze. Only a retained live qualification can establish enforcement.
+
 - **(a) Protocol conformance** (`test/codex-protocol.test.ts`, CI) — the adapter parses the
   real Codex input shape and its deny wire validates against the copied real output schemas.
 - **(b) Probe self-test** (`test/codex-probe-selftest.test.ts`, CI) — the probe's own

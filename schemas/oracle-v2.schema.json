@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/hexrift/tamperward/v2.49.0/schemas/oracle-v2.schema.json",
+  "title": "TamperWard independent JSON RPC oracle result v2",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "verdict", "planned", "completed", "passed", "oracle_assurance"],
+  "properties": {
+    "schema_version": {"const": 2},
+    "verdict": {"enum": ["VERIFIED", "ORACLE_RED", "CANNOT_VERIFY"]},
+    "planned": {"type": "integer", "minimum": 0, "maximum": 64},
+    "completed": {"type": "integer", "minimum": 0, "maximum": 64},
+    "passed": {"type": "integer", "minimum": 0, "maximum": 64},
+    "reason": {"enum": ["INVALID_RESPONSE", "EXECUTION_FAILED", "BUDGET_EXCEEDED", "ASSERTION_FAILED", "MANIFEST_INVALID", "BACKEND_UNAVAILABLE", "SNAPSHOT_CHANGED", "CLEANUP_FAILED", "INFRASTRUCTURE_FAILED"]},
+    "binding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["head", "tree", "manifest", "image"],
+      "properties": {
+        "head": {"type": "string", "pattern": "^(?:[a-f0-9]{40}|[a-f0-9]{64})$"},
+        "tree": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "manifest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "image": {"type": "string", "pattern": "^(?!-)[^\\s@]+@sha256:[a-f0-9]{64}$"}
+      }
+    },
+    "oracle_assurance": {
+      "type": "object", "additionalProperties": false,
+      "required": ["level", "assertions_outside_candidate", "candidate_controls_rpc_response", "scope"],
+      "properties": {
+        "level": {"const": "external-json-rpc"},
+        "assertions_outside_candidate": {"const": true},
+        "candidate_controls_rpc_response": {"const": true},
+        "scope": {"const": "CommonJS JSON function-response cases only; no framework-wide or exhaustive semantic guarantee"}
+      }
+    }
+  },
+  "allOf": [{"if": {"properties": {"verdict": {"const": "VERIFIED"}}}, "then": {"required": ["binding"], "properties": {"binding": {}, "planned": {"type": "integer", "minimum": 1}, "completed": {"type": "integer", "minimum": 1}, "passed": {"type": "integer", "minimum": 1}}}}]
+}

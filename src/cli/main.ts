@@ -82,6 +82,8 @@ function parseDoctor(args: string[]): DoctorOpts {
     else if (a === '--json') o.json = true;
     else if (a === '--repo') o.repo = args[++i];
     else if (a === '--branch') o.branch = args[++i];
+    else if (a === '--required-checks') o.requiredChecks = args[++i].split(',');
+    else if (a === '--check-contract') o.checkContract = args[++i] as DoctorOpts['checkContract'];
   }
   return o;
 }
@@ -136,7 +138,7 @@ function parseCheck(args: string[]): CheckOpts {
   return o;
 }
 
-type ValueRule = 'string' | 'positive' | 'positive-integer' | 'non-negative' | 'format' | 'mode';
+type ValueRule = 'string' | 'positive' | 'positive-integer' | 'non-negative' | 'format' | 'verify-format' | 'mode';
 
 function splitLongOptionEquals(args: string[]): string[] {
   const out: string[] = [];
@@ -231,6 +233,8 @@ function validateFlatArgs(args: string[], grammar: CliGrammar): ValidatedArgs {
         if (!Number.isFinite(n) || n < 0) {
           return { error: `${a} needs a non-negative number (got "${v}")`, seen, positionals };
         }
+      } else if (rule === 'verify-format' && v !== 'json' && v !== 'sarif') {
+        return { error: `--format needs one of json | sarif (got "${v}")`, seen, positionals };
       } else if (rule === 'format' && !isFormat(v)) {
         return {
           error: `--format needs one of ${FORMATS.join(' | ')} (got "${v}")`,
@@ -335,7 +339,7 @@ export function validateCliArgs(cmd: string, args: string[]): string | undefined
   }
 
   if (cmd === 'doctor') {
-    return validateFlatArgs(args, {
+    const parsed = validateFlatArgs(args, {
       flags: ['--github', '--json'],
       values: {
         '--cwd': 'string',
@@ -343,8 +347,15 @@ export function validateCliArgs(cmd: string, args: string[]): string | undefined
         '--workflow': 'string',
         '--repo': 'string',
         '--branch': 'string',
+        '--required-checks': 'string',
+        '--check-contract': 'string',
       },
-    }).error;
+    });
+    if (parsed.error) return parsed.error;
+    if (parsed.seen.has('--required-checks') && parsed.seen.has('--check-contract')) return 'choose either --required-checks or --check-contract';
+    const contract = args[args.indexOf('--check-contract') + 1];
+    if (parsed.seen.has('--check-contract') && contract !== 'tamperward-repo') return '--check-contract must be tamperward-repo';
+    return undefined;
   }
 
   if (cmd === 'stats') {
@@ -393,7 +404,7 @@ export function validateCliArgs(cmd: string, args: string[]): string | undefined
   }
 
   if (cmd === 'verify') {
-    return validateFlatArgs(args, {
+    const parsed = validateFlatArgs(args, {
       flags: ['--json', '--keep', '--require-ancestor'],
       values: {
         '--base': 'string',
@@ -401,8 +412,12 @@ export function validateCliArgs(cmd: string, args: string[]): string | undefined
         '--cwd': 'string',
         '--cargo-target-root': 'string',
         '--budget': 'positive',
+        '--format': 'verify-format',
       },
-    }).error;
+    });
+    if (parsed.error) return parsed.error;
+    if (parsed.seen.has('--json') && parsed.seen.has('--format')) return '--json cannot be combined with --format';
+    return undefined;
   }
 
   if (cmd === 'trace-verify') {
@@ -548,7 +563,7 @@ Usage:
   tamperward check --worktree               check working-tree changes (stop sweep)
   tamperward check --diff <base>...<head>   check a commit range (CI authority)
   tamperward check ... --json               machine-readable output (alias for --format json)
-  tamperward check ... --format <fmt>       text | json | github | auto (default)
+  tamperward check ... --format <fmt>       text | json | github | sarif | auto (default)
 
 Formats:
   text    grouped, wrapped, colour-optional terminal output. Severity is always
@@ -560,6 +575,7 @@ Formats:
   json    versioned machine-readable output. Top-level schema_version identifies
           the public JSON-schema major; published schemas live under schemas/.
   auto    github when GITHUB_ACTIONS=true, otherwise text.
+  sarif   SARIF 2.1.0 for security dashboards and code scanning.
   tamperward hook claude                    PreToolUse gate (reads hook JSON on stdin)
   tamperward sweep claude                   Stop sweep (re-scan the turn's working tree)
   tamperward hook-service start [--dir D]   OPT-IN persistent hook service: one warm
@@ -581,6 +597,7 @@ Formats:
                                             trusted revision
   tamperward verify [--base R] [--cmd C]    pristine-suite re-execution: run the suite
              [--budget S] [--json] [--keep] as-is AND with protected files restored
+             [--format json|sarif]         emit machine JSON or SARIF 2.1.0
              [--require-ancestor] [--cwd D]  from the trusted base; a visible-green /
                                             pristine-red result is a MASKED FAILURE
                                             (exit 1, or 0 under a compact tw1:<digest>
@@ -637,10 +654,14 @@ Formats:
                                              TAMPERWARD_AUDIT_LOG). A finding is an
                                              integrity signal, not proof of agent intent.
   tamperward measure-suite --cmd C [--budget S] time a bare suite in the live checkout
-  tamperward oracle --manifest F --sha256 H [--cwd D]
+  tamperward oracle --manifest F --sha256 H [--cwd D] [--schema-version 1|2]
                                             independent container-backed JSON function oracle
   tamperward attestation sign --payload F --key K --out F
                                             sign a trusted CI verdict with an external Ed25519 key
+  tamperward attestation sign --schema-version 2 --payload F --evidence F
+             --sha256 H --key K --out F      sign completed suite evidence for admission
+  tamperward attestation admit --statement F --key K --expect F
+                                            require exact suite assurance and request scope
   tamperward attestation verify --statement F --key K --expect F
                                             require a trusted public key and exact fresh binding
   tamperward allow <rule> --reason "..."    record a human sign-off (local audit ledger)
@@ -724,6 +745,8 @@ Formats:
              [--json]                       envelope against the trusted policy.
              [--github] [--repo O/R]        --github also validates repository
              [--branch B]                   authority: required tamperward status,
+             [--required-checks A,B]        explicit required status contexts, or
+             [--check-contract tamperward-repo]  this repository's expanded list;
                                             Code Owner review, and stale-review
                                             dismissal after new pushes. Public
                                             rules can be read anonymously; set

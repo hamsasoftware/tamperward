@@ -46,6 +46,7 @@ import { treeFingerprint } from '../fingerprint';
 import { POLICY_FILE } from '../policy';
 import { loadPolicy } from '../policy-load';
 import { errorMessage } from '../narrow';
+import { capabilityReadiness } from '../capability-readiness';
 import { detectRuntimes, detectionHeadline, neutralOnlyCaveat } from '../runtimes';
 import { adapterFor, labelFor } from '../adapters/registry';
 import { storedQualification } from './runtime';
@@ -626,6 +627,11 @@ export async function runOnboard(opts: OnboardOpts, io: OnboardIo = {}): Promise
     else if (posture === 'READY WITH WARNINGS') status('READY', 'Configured with the limitation(s) above.', 'warn');
     else if (posture === 'INCOMPLETE') status('INCOMPLETE', 'Setup needs the action(s) above.', 'warn');
     else status('BLOCKED', 'Fix the broken item(s) above before relying on the gate.', 'bad');
+    for (const capability of capabilityReadiness({ checks: doctorOutcome.checks, platform,
+      verifierBackend: doctorOutcome.verifierBackend })) {
+      status(capability.state, `${capability.id}: ${capability.next}`,
+        capability.state === 'AVAILABLE' ? 'ok' : 'warn');
+    }
 
     if (doctorOutcome.github) {
       status('OK', 'GitHub authority enforced for ' + doctorOutcome.github.repo + '#' + doctorOutcome.github.branch + '.', 'ok');

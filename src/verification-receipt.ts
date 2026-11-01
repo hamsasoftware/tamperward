@@ -40,6 +40,7 @@ import {
   type VerificationRecord,
 } from './verification-state';
 import { VERIFY_VERDICTS, type VerifyVerdict } from './machine-output';
+import { isSuiteExitAssurance, suiteExitAssurance, type OracleAssuranceReport } from './oracle-assurance';
 
 /** On-disk/transport format version for the receipt. Independent of the
  *  machine-output `schema_version` and of #600's record version: a receipt whose
@@ -79,6 +80,7 @@ export interface VerificationReceipt {
    *  consumer detect an internally-inconsistent (tampered) receipt without any
    *  other input; it is NOT a substitute for CI's independent identity check. */
   evidence_digest: string;
+  oracle_assurance?: OracleAssuranceReport;
 }
 
 /** How a claimed receipt was interpreted during reconciliation. */
@@ -138,6 +140,7 @@ export function receiptFromRecord(record: VerificationRecord): VerificationRecei
     tw_version: record.tw_version,
     verified_at: record.verified_at,
     evidence_digest: receiptEvidenceDigest(core),
+    oracle_assurance: suiteExitAssurance(),
   };
 }
 
@@ -257,6 +260,9 @@ export function classifyReceipt(value: unknown): ClaimedReceipt {
       detail: 'receipt verdict is VERIFIED but a stage result is not a clean pass',
     };
   }
+  if (value.oracle_assurance !== undefined && !isSuiteExitAssurance(value.oracle_assurance)) {
+    return { disposition: 'MALFORMED', detail: 'receipt has unsupported or malformed oracle assurance' };
+  }
   if (typeof value.evidence_digest !== 'string') {
     return { disposition: 'MALFORMED', detail: 'receipt evidence_digest is missing' };
   }
@@ -293,6 +299,7 @@ export function classifyReceipt(value: unknown): ClaimedReceipt {
       binding,
       stages,
       evidence_digest: value.evidence_digest,
+      ...(value.oracle_assurance !== undefined ? { oracle_assurance: suiteExitAssurance() } : {}),
     },
   };
 }

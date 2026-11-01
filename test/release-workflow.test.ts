@@ -2,7 +2,7 @@
 // commit. These tests pin the invariants of .github/workflows/release.yml directly:
 // the tag and GitHub-release steps converge on re-run independently of whether the
 // registry already has the version, the release gate does not re-run the suite that
-// exact-head PR CI already ran, `plan` refuses a HEAD that is not the bump commit
+// required PR CI already ran, `plan` refuses a HEAD that is not the bump commit
 // unless a dispatch input says otherwise, and the checkout fetches tags so the
 // "Full Changelog" compare link can be computed.
 
@@ -94,7 +94,7 @@ describe('release.yml re-entrancy (#420)', () => {
 });
 
 describe('release.yml gate does not re-run the suite (#420)', () => {
-  it('has no npm test / vitest step: exact-head PR CI is the authority', () => {
+  it('has no npm test / vitest step: required PR CI tests the synthetic merge tree', () => {
     const { steps } = load();
     const offenders = steps.filter(
       (s) => s.run !== undefined && /\bnpm (run )?test\b|\bvitest\b/.test(s.run),
@@ -105,7 +105,9 @@ describe('release.yml gate does not re-run the suite (#420)', () => {
   it('documents why the suite is not re-run', () => {
     const text = readFileSync(WF, 'utf8');
     expect(text).toMatch(/perf-smoke/);
-    expect(text).toMatch(/exact-head/);
+    expect(text).toMatch(/synthetic merge tree/);
+    expect(text).toMatch(/squash\s*\n\s*# merge creates a different commit SHA/i);
+    expect(text).toMatch(/does not prove[\s\S]*npm tarball bytes equal the PR test artifact/);
   });
 });
 
@@ -143,5 +145,44 @@ describe('release.yml checkout (#420)', () => {
     if (!checkout) throw new Error('no checkout step');
     expect(checkout.with?.['fetch-tags']).toBe(true);
     expect(checkout.with?.['fetch-depth']).toBe(0);
+  });
+});
+
+describe('release artifact verification (#804)', () => {
+  it('verifies and publishes the same artifact with the planned version and release commit', () => {
+    const { doc, steps } = load();
+    const artifact = byName(steps, /^Verify release artifact$/);
+    const publish = byName(steps, /^Publish$/);
+    expect(artifact.if).toContain("steps.plan.outputs.publish == 'true'");
+    expect(artifact.run).toContain('.github/scripts/release-artifact.mjs verify');
+    expect(artifact.env?.EXPECTED_COMMIT).toContain('github.sha');
+    expect(artifact.env?.EXPECTED_VERSION).toContain('steps.plan.outputs.version');
+    expect(artifact.env?.EXPECTED_REPOSITORY).toContain('github.repository');
+    expect(artifact.env?.GH_TOKEN).toContain('github.token');
+    expect(doc.permissions).toMatchObject({ 'pull-requests': 'read' });
+    expect(steps.indexOf(artifact)).toBeLessThan(steps.indexOf(publish));
+    expect(publish.run).toContain('.github/scripts/release-artifact.mjs publish');
+    expect(publish.run).not.toMatch(/npm publish(?:\s|$)/);
+    expect(publish.env?.ARTIFACT_RECEIPT).toContain('steps.artifact.outputs.receipt');
+    expect(publish.env?.EXPECTED_REPOSITORY).toContain('github.repository');
+  });
+
+  it('checks canonical identifiers for every schema major', () => {
+    const { steps } = load();
+    const schemas = byName(steps, /^Verify published schema identifiers$/);
+    expect(schemas.run).toContain('schemas/*.schema.json');
+    expect(schemas.run).not.toContain('*-v1.schema.json');
+  });
+
+  it('retains the pull request package install and executable CLI smoke', () => {
+    const ci = parse(readFileSync(join(__dirname, '..', '.github/workflows/ci.yml'), 'utf8'));
+    const artifact = ci.jobs.build.steps.find((step: Step) => step.name === 'Smoke-test the published artifact');
+    expect(artifact.run).toContain('npm pack --silent');
+    expect(artifact.run).toContain('npm install --no-audit --no-fund');
+    expect(artifact.run).toContain('./node_modules/.bin/tamperward 2>&1 | head -1');
+    expect(artifact.run).toContain('case "$FIRST" in');
+    expect(artifact.run).toContain('tamperward*)');
+    expect(artifact.run).toContain('exit 1');
+    expect(artifact.run).not.toContain('.github/scripts/release-artifact.mjs');
   });
 });

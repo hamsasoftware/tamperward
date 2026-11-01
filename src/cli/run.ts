@@ -32,7 +32,7 @@
 // The hooks remain the fast path — they steer the agent in-session. This
 // envelope, or `check --diff` + `verify` in CI, is the boundary.
 
-import { execFileSync, spawn, spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { accessSync, constants as fsConstants, mkdtempSync, readdirSync, readFileSync, readlinkSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -40,7 +40,8 @@ import { dirname, join, resolve } from 'node:path';
 import { runCheck } from './check';
 import { runVerify } from './verify';
 import { loadPolicyAt } from '../policy-load';
-import { objectRewriteState, trustedGitEnv } from '../git/trusted';
+import { objectRewriteState } from '../git/trusted';
+import { readTrustedGit, trustedGitAncestor } from '../git/process';
 import { treeFingerprint } from '../fingerprint';
 import {
   attestDependencyEnvironment,
@@ -821,7 +822,7 @@ function finishObserverAdvisory(
 }
 
 function git(args: string[], cwd: string): string {
-  return execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 1 << 28, env: trustedGitEnv() });
+  return readTrustedGit(args, cwd);
 }
 
 /** Clock ticks since boot. FLOOR is load-bearing: /proc/uptime is fractional
@@ -920,6 +921,16 @@ export function runEnvelope(opts: RunEnvelopeOpts): number {
     return 2;
   }
 
+  // Inspect rewrite metadata before any Git read of the trusted base. Git
+  // itself can consume shallow/graft metadata while resolving that base.
+  let rewritesBefore: string;
+  try {
+    rewritesBefore = objectRewriteState(cwd);
+  } catch (e) {
+    err(`tamperward run: ${e instanceof Error ? e.message : String(e)} — cannot verify the trusted Git object layer before agent start.`);
+    return 2;
+  }
+
   // Trusted base: resolved BEFORE the agent runs, so commits the agent makes
   // cannot move it. --base overrides for callers whose trusted state is older
   // than HEAD (e.g. a branch the agent was already let loose on).
@@ -966,7 +977,13 @@ export function runEnvelope(opts: RunEnvelopeOpts): number {
   // positives) or let real pre-staged weakening hide as "already there"
   // (false negatives). Refuse both unless the caller owns the risk.
   if (!opts.allowDirty) {
-    const dirty = git(['status', '--porcelain'], cwd).trim();
+    let dirty: string;
+    try {
+      dirty = git(['status', '--porcelain'], cwd).trim();
+    } catch (error) {
+      err(`tamperward run: ${error instanceof Error ? error.message : String(error)} — cannot establish the entry-time working tree.`);
+      return 2;
+    }
     if (dirty) {
       err('tamperward run: working tree is dirty before the agent starts — the envelope cannot');
       err('attribute changes. Commit or stash first, or pass --allow-dirty to own the risk.');
@@ -1039,7 +1056,17 @@ export function runEnvelope(opts: RunEnvelopeOpts): number {
   // pristine overlay, the ancestry assertion, the ranged diff — goes through
   // it, and `git replace` / info/grafts / shallow can redirect all three
   // without moving a ref or touching a file (src/git/trusted.ts).
-  const rewritesBefore = objectRewriteState(cwd);
+  try {
+    if (objectRewriteState(cwd) !== rewritesBefore) {
+      err('tamperward run: Git rewrite metadata changed during entry preflight — cannot trust the frozen base.');
+      finishObserverAdvisory(observer, say);
+      return 2;
+    }
+  } catch (e) {
+    err(`tamperward run: ${e instanceof Error ? e.message : String(e)} — cannot verify the trusted Git object layer before agent start.`);
+    finishObserverAdvisory(observer, say);
+    return 2;
+  }
   const spawnTicks = nowTicks(); // survivors are what appears after this
   // Always use the trusted lifecycle supervisor. A runtime budget controls
   // elapsed time; it does not control whether TamperWard owns descendants.
@@ -1124,7 +1151,16 @@ export function runEnvelope(opts: RunEnvelopeOpts): number {
   // BEFORE adjudication, not merely reported after it: every check downstream
   // reads the base through this layer, so a report produced under a redirected
   // base describes an anchor we never chose.
-  if (objectRewriteState(cwd) !== rewritesBefore) {
+  let rewritesAfter: string;
+  try {
+    rewritesAfter = objectRewriteState(cwd);
+  } catch (e) {
+    err(`tamperward run: ${e instanceof Error ? e.message : String(e)} — cannot adjudicate the trusted Git object layer.`);
+    finishObserverAdvisory(observer, say);
+    emitRunJson('CANNOT_ADJUDICATE', 2, { reason: 'CHECK_DIFF_UNJUDGEABLE' });
+    return 2;
+  }
+  if (rewritesAfter !== rewritesBefore) {
     err('tamperward run: git object-replacement state changed during this run — a replace ref, graft');
     err('or shallow boundary now redirects what the trusted base resolves to. Nothing below could be');
     err('read against the anchor we started from. That is the finding.');
@@ -1134,9 +1170,18 @@ export function runEnvelope(opts: RunEnvelopeOpts): number {
     return 1;
   }
 
-  const head = git(['rev-parse', 'HEAD'], cwd).trim();
-  const isAncestor = spawnSync('git', ['merge-base', '--is-ancestor', base, head], { cwd, env: trustedGitEnv() });
-  if (isAncestor.status !== 0) {
+  let head: string;
+  let isAncestor: boolean;
+  try {
+    head = git(['rev-parse', 'HEAD'], cwd).trim();
+    isAncestor = trustedGitAncestor(base, head, cwd);
+  } catch (error) {
+    err(`tamperward run: ${error instanceof Error ? error.message : String(error)} — cannot adjudicate Git ancestry.`);
+    finishObserverAdvisory(observer, say);
+    emitRunJson('CANNOT_ADJUDICATE', 2, { reason: 'CHECK_DIFF_UNJUDGEABLE' });
+    return 2;
+  }
+  if (!isAncestor) {
     err(`tamperward run: HEAD ${head.slice(0, 10)} is not a descendant of the trusted base ${base.slice(0, 10)} —`);
     err('the agent rewrote history out from under the anchor. That is the finding.');
     say(`\ntamperward run — agent exit ${agentExit}; HISTORY_REWRITE → ENFORCEMENT_FAILED`);
@@ -1248,7 +1293,14 @@ export function runEnvelope(opts: RunEnvelopeOpts): number {
   // And again after the checks: a survivor can install a replace ref while the
   // suite is running, which would leave the verdict above describing a base
   // that no longer resolves the same way.
-  const rewrote = objectRewriteState(cwd) !== rewritesBefore;
+  let rewritesUnavailable = false;
+  let rewrote = false;
+  try {
+    rewrote = objectRewriteState(cwd) !== rewritesBefore;
+  } catch (e) {
+    rewritesUnavailable = true;
+    err(`tamperward run: ${e instanceof Error ? e.message : String(e)} — cannot certify the Git object layer after adjudication.`);
+  }
   if (rewrote) {
     err('tamperward run: git object-replacement state changed WHILE the tree was being adjudicated —');
     err('the checks above read the trusted base through an object layer that has since moved.');
@@ -1281,7 +1333,7 @@ export function runEnvelope(opts: RunEnvelopeOpts): number {
   // proves non-quiescence, the result is the concrete enforcement finding (1),
   // not an unexplained cannot-adjudicate (2). This keeps timing from changing
   // the public classification of the same attack.
-  const cannot = !notQuiescent && (diffCode === 2 || workCode === 2 || verifyCode === 2);
+  const cannot = rewritesUnavailable || (!notQuiescent && (diffCode === 2 || workCode === 2 || verifyCode === 2));
   const blocked =
     diffCode === 1 || workCode === 1 || verifyCode === 1 || notQuiescent || observerBlocked;
   const enforcement = cannot ? 2 : blocked ? 1 : 0;
@@ -1319,6 +1371,7 @@ export function runEnvelope(opts: RunEnvelopeOpts): number {
     // quiescent, so exactly one of the three codes is 2 here.
     const cannotReason: RunCannotAdjudicateReason | null =
       enforcement !== 2 ? null
+      : rewritesUnavailable ? 'CHECK_DIFF_UNJUDGEABLE'
       : verifyCode === 2 ? 'VERIFY_CANNOT_VERIFY'
       : diffCode === 2 ? 'CHECK_DIFF_UNJUDGEABLE'
       : 'CHECK_WORKTREE_UNJUDGEABLE';
