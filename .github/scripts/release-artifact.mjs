@@ -79,6 +79,29 @@ export function snapshotInputs(cwd, commit, run = runCommand) {
   return { commit, files };
 }
 
+export function reviewedPullRequest(value, commit, repository) {
+  if (!Array.isArray(value)) throw new Error('release has no unambiguous reviewed pull request');
+  const matches = value.filter(pull => pull && pull.merge_commit_sha === commit && typeof pull.merged_at === 'string' && Number.isFinite(Date.parse(pull.merged_at))
+    && pull.base?.ref === 'main' && pull.base?.repo?.full_name === repository);
+  const pull = matches[0];
+  if (matches.length !== 1 || !Number.isSafeInteger(pull.number) || pull.number <= 0 || !/^[a-f0-9]{40}$/.test(pull.head?.sha)) {
+    throw new Error('release has no unambiguous reviewed pull request');
+  }
+  return { number: pull.number, head: pull.head.sha };
+}
+
+function verifyReviewedInputs(cwd, options, release, run) {
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(options.repository)) throw new Error('invalid release repository identity');
+  const pulls = json(Buffer.from(run('gh', ['api', `repos/${options.repository}/commits/${options.expectedCommit}/pulls?per_page=100`], { cwd })));
+  const reviewed = reviewedPullRequest(pulls, options.expectedCommit, options.repository);
+  run('git', ['fetch', '--no-tags', 'origin', `refs/pull/${reviewed.number}/head`], { cwd });
+  const fetched = run('git', ['rev-parse', '--verify', 'FETCH_HEAD^{commit}'], { cwd }).trim();
+  if (fetched !== reviewed.head) throw new Error('reviewed pull request head changed during release verification');
+  const source = snapshotInputs(cwd, reviewed.head, run);
+  compareInputFiles(source.files, release.files, { version: options.expectedVersion, allowVersionOnly: true });
+  return reviewed;
+}
+
 export function workingInputs(cwd) {
   const paths = [];
   for (const directory of INPUT_DIRECTORIES) paths.push(...listFiles(cwd, directory));
@@ -176,6 +199,7 @@ export function verifyArtifact(cwd, options) {
   const expected = snapshotInputs(cwd, options.expectedCommit, run);
   assertVersion(expected.files, options.expectedVersion);
   compareInputFiles(expected.files, workingInputs(cwd));
+  const reviewed = options.repository ? verifyReviewedInputs(cwd, options, expected, run) : undefined;
   const workspace = mkdtempSync(join(options.tempRoot ?? tmpdir(), 'tamperward-artifact-'));
   let complete = false;
   try {
@@ -204,6 +228,7 @@ export function verifyArtifact(cwd, options) {
     const receipt = {
       schema_version: 1, commit: options.expectedCommit, version: options.expectedVersion,
       inputs_sha256: inputDigest(expected.files), artifact, sha256: hash(bytes),
+      ...(reviewed ? { repository: options.repository, reviewed_pr: reviewed } : {}),
     };
     const receiptPath = join(workspace, 'receipt.json');
     writeFileSync(receiptPath, JSON.stringify(receipt) + '\n');
@@ -220,6 +245,7 @@ export function publishArtifact(cwd, receiptPath, options) {
   const receipt = json(readFileSync(receiptPath));
   if (receipt.schema_version !== 1 || receipt.commit !== options.expectedCommit || receipt.version !== options.expectedVersion || !isAbsolute(receipt.artifact) || dirname(receipt.artifact) !== dirname(resolve(receiptPath)) || !receipt.artifact.endsWith('.tgz') || !/^[0-9a-f]{64}$/.test(receipt.sha256) || !/^[0-9a-f]{64}$/.test(receipt.inputs_sha256)) throw new Error('verified artifact identity differs from release plan');
   if (inputDigest(workingInputs(cwd)) !== receipt.inputs_sha256) throw new Error('release inputs changed after artifact verification');
+  if (options.repository && (receipt.repository !== options.repository || !Number.isSafeInteger(receipt.reviewed_pr?.number) || receipt.reviewed_pr.number <= 0 || !/^[a-f0-9]{40}$/.test(receipt.reviewed_pr?.head))) throw new Error('release receipt lacks reviewed pull request identity');
   if (hash(readFileSync(receipt.artifact)) !== receipt.sha256) throw new Error('release artifact changed after verification');
   const tag = semver.prerelease(receipt.version) ? 'next' : 'latest';
   (options.run ?? runCommand)('npm', ['publish', receipt.artifact, '--ignore-scripts', '--provenance', '--access', 'public', '--tag', tag], { cwd });
@@ -227,11 +253,12 @@ export function publishArtifact(cwd, receiptPath, options) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
-    const options = { expectedCommit: process.env.EXPECTED_COMMIT, expectedVersion: process.env.EXPECTED_VERSION };
+    const options = { expectedCommit: process.env.EXPECTED_COMMIT, expectedVersion: process.env.EXPECTED_VERSION, repository: process.env.EXPECTED_REPOSITORY };
     if (process.argv[2] === 'verify') {
       const receiptPath = verifyArtifact(process.cwd(), options);
       const receipt = json(readFileSync(receiptPath));
       console.log(`verified release ${receipt.version} commit=${receipt.commit} inputs=${receipt.inputs_sha256} artifact=${receipt.sha256}`);
+      if (receipt.reviewed_pr) console.log(`reviewed pull request ${receipt.repository}#${receipt.reviewed_pr.number} head=${receipt.reviewed_pr.head}`);
       if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `receipt=${receiptPath}\n`);
       else console.log(`receipt=${receiptPath}`);
     } else if (process.argv[2] === 'publish' && process.env.ARTIFACT_RECEIPT) {

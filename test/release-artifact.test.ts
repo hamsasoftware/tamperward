@@ -7,6 +7,7 @@ import { dirname, join } from 'node:path';
 import {
   compareInputFiles, consumerLock, inputDigest, normalizePackResult, publishArtifact,
   snapshotInputs, validateSchemas, verifyArtifact, verifyCli, verifyPackageTree, workingInputs,
+  reviewedPullRequest,
   type CommandRunner, type InputFiles,
 } from '../.github/scripts/release-artifact.mjs';
 
@@ -69,6 +70,21 @@ function fixture(): { cwd: string; commit: string } {
 }
 
 describe('release input identity (#804)', () => {
+  it('selects the immutable reviewed head of the exact main merge', () => {
+    const commit = 'a'.repeat(40), head = 'b'.repeat(40);
+    const pull = { number: 42, merged_at: '2026-11-01T12:00:00Z', merge_commit_sha: commit,
+      head: { sha: head }, base: { ref: 'main', repo: { full_name: 'hexrift/tamperward' } } };
+    expect(reviewedPullRequest([pull], commit, 'hexrift/tamperward')).toEqual({ number: 42, head });
+    for (const candidate of [
+      { ...pull, merged_at: null }, { ...pull, merge_commit_sha: 'c'.repeat(40) },
+      { ...pull, base: { ...pull.base, ref: 'feature' } },
+      { ...pull, base: { ...pull.base, repo: { full_name: 'another/repository' } } },
+      { ...pull, head: { sha: 'main' } }, { ...pull, number: '../42' },
+    ]) expect(() => reviewedPullRequest([candidate], commit, 'hexrift/tamperward')).toThrow(/reviewed pull request/);
+    expect(() => reviewedPullRequest([], commit, 'hexrift/tamperward')).toThrow(/reviewed pull request/);
+    expect(() => reviewedPullRequest([pull, pull], commit, 'hexrift/tamperward')).toThrow(/reviewed pull request/);
+  });
+
   it('accepts identical input bytes and binds the file names into the digest', () => {
     expect(() => compareInputFiles(inputs(), inputs())).not.toThrow();
     expect(inputDigest(encoded({ a: 'one' }))).not.toBe(inputDigest(encoded({ b: 'one' })));
@@ -201,6 +217,27 @@ describe('packed release contents (#804)', () => {
 });
 
 describe('release artifact lifecycle (#804)', () => {
+  it('binds a final package to the independently recorded merged PR head', () => {
+    const { cwd, commit: reviewed } = fixture();
+    writeFileSync(join(cwd, 'package.json'), JSON.stringify(manifest('1.0.1')));
+    writeFileSync(join(cwd, 'package-lock.json'), JSON.stringify(lock('1.0.1')));
+    execute('git', ['add', '.'], { cwd });
+    execute('git', ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'version metadata'], { cwd });
+    const commit = execute('git', ['rev-parse', 'HEAD'], { cwd }).trim();
+    execute('git', ['tag', 'v1.0.0', reviewed], { cwd });
+    execute('git', ['remote', 'add', 'origin', cwd], { cwd });
+    execute('git', ['update-ref', 'refs/pull/42/head', reviewed], { cwd });
+    const run: CommandRunner = (command, args, options) => {
+      if (command === 'gh') return JSON.stringify([{ number: 42, merged_at: '2026-11-01T12:00:00Z', merge_commit_sha: commit,
+        head: { sha: reviewed }, base: { ref: 'main', repo: { full_name: 'hexrift/tamperward' } } }]);
+      if (command === 'npm' && args[0] === 'publish') throw new Error('unexpected publication');
+      return execute(command, args, options);
+    };
+    const receiptPath = verifyArtifact(cwd, { expectedCommit: commit, expectedVersion: '1.0.1', repository: 'hexrift/tamperward', run, tempRoot: temporary() });
+    expect(JSON.parse(readFileSync(receiptPath, 'utf8'))).toMatchObject({ repository: 'hexrift/tamperward', reviewed_pr: { number: 42, head: reviewed } });
+    expect(() => publishArtifact(cwd, receiptPath, { expectedCommit: commit, expectedVersion: '1.0.1', repository: 'another/repository', run })).toThrow(/reviewed pull request/);
+  }, 60000);
+
   it('builds and packs once, installs the exact tarball, and publishes only unchanged bytes with scripts disabled', () => {
     const { cwd, commit } = fixture();
     const commands: Array<[string, string[]]> = [];

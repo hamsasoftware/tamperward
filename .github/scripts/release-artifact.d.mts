@@ -11,6 +11,7 @@ export type CommandRunner = (command: string, args: string[], options: CommandOp
 export interface ArtifactOptions {
   expectedCommit: string;
   expectedVersion: string;
+  repository?: string;
   run?: CommandRunner;
   tempRoot?: string;
 }
@@ -21,6 +22,8 @@ export interface ArtifactReceipt {
   inputs_sha256: string;
   artifact: string;
   sha256: string;
+  reviewed_pr?: { number: number; head: string };
+  repository?: string;
 }
 export interface PackageManifest {
   name: string;
@@ -41,6 +44,7 @@ export type ConsumerLock = PackageLock & {
 export function compareInputFiles(expected: InputFiles, actual: InputFiles, options?: { version?: string; allowVersionOnly?: boolean }): void;
 export function inputDigest(files: InputFiles): string;
 export function snapshotInputs(cwd: string, commit: string, run?: CommandRunner): ReleaseSnapshot;
+export function reviewedPullRequest(value: unknown, commit: string, repository: string): { number: number; head: string };
 export function workingInputs(cwd: string): InputFiles;
 export function normalizePackResult(value: unknown): { filename: string };
 export function consumerLock(manifest: PackageManifest, lock: PackageLock, artifact: string, bytes: Buffer): ConsumerLock;
