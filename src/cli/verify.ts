@@ -43,11 +43,12 @@
 
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { chmodSync, cpSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, realpathSync, rmSync, symlinkSync, writeFileSync, existsSync } from 'node:fs';
+import { chmodSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { loadPolicy, loadPolicyAt } from '../policy-load';
 import { repoRoot } from '../repo-context';
+import { materialize, materializationFailureReason, probeFilesystemCaseSensitivity, safeSymlink, validateSymlinkGraph, workingTreePaths } from '../candidate-snapshot';
 import { assertRev } from '../git/build';
 import { trustedGitEnv } from '../git/trusted';
 import { treeFingerprint } from '../fingerprint';
@@ -72,7 +73,6 @@ import {
 import { Policy } from '../types';
 import {
   MACHINE_SCHEMA_VERSION,
-  type MaterializationFailureReason,
   type VerifyCannotVerifyReason,
 } from '../machine-output';
 import { oobFromEnv, oobHeadFromEnv, oobHeadProblem, oobToken } from '../signoff';
@@ -94,6 +94,8 @@ import { colourEnabled } from './render/text';
 import { paint, severityColour, BOLD, type Severity } from './render/status';
 import { configuredAuditPath } from './audit';
 import { measurementComparison, recordMeasurement, type MeasurementOutcome } from './measurements';
+
+export { materialize, materializationFailureReason, probeFilesystemCaseSensitivity } from '../candidate-snapshot';
 
 export interface VerifyOpts {
   cwd?: string;
@@ -314,285 +316,6 @@ function baseIsAncestorOfHead(base: string, cwd: string): boolean {
   return r.status === 0;
 }
 
-function inside(root: string, path: string): boolean {
-  const rel = relative(resolve(root), resolve(path));
-  return rel === '' || (rel !== '..' && !rel.startsWith(`..${sep}`) && !isAbsolute(rel));
-}
-
-function linkParts(path: string): string[] {
-  // Windows path APIs accept both separators in symlink targets. Split both
-  // there, but keep backslash as an ordinary filename character on POSIX.
-  const parts = sep === '\\' ? path.split(/[\\/]+/) : path.split('/');
-  return parts.filter((part) => part !== '' && part !== '.');
-}
-
-class MaterializationError extends Error {
-  constructor(
-    readonly materializationReason: MaterializationFailureReason,
-    message: string,
-  ) {
-    super(message);
-    this.name = 'MaterializationError';
-  }
-}
-
-export function materializationFailureReason(error: unknown): MaterializationFailureReason {
-  if (error instanceof MaterializationError) return error.materializationReason;
-  const code =
-    typeof error === 'object' && error !== null && 'code' in error
-      ? (error as NodeJS.ErrnoException).code
-      : undefined;
-  const message = error instanceof Error ? error.message : String(error);
-  if (/tracked\s+node_modules|node_modules.*(?:attested|dependency).*(?:conflict|replace)/i.test(message)) {
-    return 'TRACKED_NODE_MODULES_CONFLICT';
-  }
-  if (/symlink.*(?:escape|cycle|parent directory)|escapes the materialised tree/i.test(message)) {
-    return 'SYMLINK_ESCAPE';
-  }
-  if (/(?:special file|where git expects a file)/i.test(message)) {
-    return 'SPECIAL_FILE';
-  }
-  if (code === 'ENOENT' || /(?:ENOENT|no such file|file not found)/i.test(message)) {
-    return 'RACING_DELETION';
-  }
-  return 'UNKNOWN';
-}
-
-function linkEscape(label: string, target: string): Error {
-  return new MaterializationError(
-    'SYMLINK_ESCAPE',
-    `${label} is a symlink that escapes the materialised tree (${JSON.stringify(target)})`,
-  );
-}
-
-function driveRelativeLinkTarget(target: string): boolean {
-  return sep === '\\' && /^[A-Za-z]:(?![\\/])/.test(target);
-}
-
-function rootedLinkTarget(target: string): boolean {
-  // On Windows, C:foo is drive-relative rather than absolute and resolves via
-  // that drive's process working directory, not the symlink's parent. It is
-  // therefore outside a copy-local containment proof just like C:\\foo.
-  return isAbsolute(target) || driveRelativeLinkTarget(target);
-}
-
-/** Reproduce a link without giving its own target lexical access outside the
- * materialised tree. The graph-aware pass below closes the second-order case
- * where an apparently in-tree target crosses the external node_modules link. */
-function safeSymlink(target: string, out: string, root: string, label: string): void {
-  if (rootedLinkTarget(target) || !inside(root, resolve(dirname(out), target))) {
-    throw linkEscape(label, target);
-  }
-  rmSync(out, { force: true });
-  symlinkSync(target, out);
-}
-
-/** Resolve a candidate link one pathname component at a time.
- *
- * A plain path.resolve() check is not sufficient once dest/node_modules is an
- * external symlink. For example, "../node_modules/../secret" lexically lands
- * back in dest, but the kernel follows node_modules into the original
- * dependency tree before applying "..", so the same text lands in the original
- * worktree. Candidate links may also reach node_modules through another
- * in-copy link, and dependencies themselves may contain links.
- *
- * Model exactly that domain transition. Once resolution enters the real
- * dependency root it may move around beneath that root, but may never climb
- * above it or follow a dependency symlink outside it. Broken descendants are
- * still representable: their unresolved suffix is checked lexically in the
- * domain reached by the deepest existing component.
- */
-function validateSymlinkGraph(
-  target: string,
-  out: string,
-  root: string,
-  dependencyRoot: string | null,
-  label: string,
-): void {
-  type Domain = 'tree' | 'deps';
-  let domain: Domain = 'tree';
-  let stack = linkParts(relative(root, dirname(out)));
-  const pending = linkParts(target);
-  const seen = new Set<string>();
-  let hops = 0;
-
-  for (let part = pending.shift(); part !== undefined; part = pending.shift()) {
-    if (part === '..') {
-      if (!stack.length) throw linkEscape(label, target);
-      stack.pop();
-      continue;
-    }
-
-    stack.push(part);
-
-    // The generated copy deliberately exposes only this top-level external
-    // dependency edge. Enter it before inspecting the on-disk destination:
-    // node_modules is installed only after every candidate link validates.
-    if (domain === 'tree' && dependencyRoot && stack.length === 1 && stack[0] === 'node_modules') {
-      domain = 'deps';
-      stack = [];
-      continue;
-    }
-
-    // The deps domain is only ever entered through the guard above, which
-    // requires a dependency root; the tree domain resolves against the root.
-    const base = domain === 'deps' && dependencyRoot ? dependencyRoot : root;
-    const current = join(base, ...stack);
-    let st;
-    try {
-      st = lstatSync(current);
-    } catch {
-      continue; // broken/missing suffix: later ".." is still domain-checked above
-    }
-    if (!st.isSymbolicLink()) continue;
-
-    if (++hops > 128) {
-      throw new MaterializationError(
-        'SYMLINK_ESCAPE',
-        `${label} contains a symlink cycle while materialising (${JSON.stringify(target)})`,
-      );
-    }
-    const key = `${domain}:${current}:${pending.join(sep)}`;
-    if (seen.has(key)) {
-      throw new MaterializationError(
-        'SYMLINK_ESCAPE',
-        `${label} contains a symlink cycle while materialising (${JSON.stringify(target)})`,
-      );
-    }
-    seen.add(key);
-
-    const next = readlinkSync(current);
-    stack.pop(); // link target is relative to the link's parent
-    if (driveRelativeLinkTarget(next)) {
-      throw linkEscape(label, target);
-    }
-    if (isAbsolute(next)) {
-      if (domain === 'tree' || !dependencyRoot || !inside(dependencyRoot, next)) {
-        throw linkEscape(label, target);
-      }
-      stack = [];
-      pending.unshift(...linkParts(relative(dependencyRoot, resolve(next))));
-    } else {
-      pending.unshift(...linkParts(next));
-    }
-  }
-}
-
-/** Git does not record directories. If a worktree directory component is
- * replaced by a link, copying a listed child would silently read through that
- * link and could import bytes from outside the repository. */
-function rejectLinkedParent(cwd: string, rel: string): void {
-  const parts = rel.split('/').slice(0, -1);
-  let current = cwd;
-  for (const part of parts) {
-    current = join(current, part);
-    let st;
-    try {
-      st = lstatSync(current);
-    } catch {
-      // A racing deletion is handled when the final entry is inspected.
-      continue;
-    }
-    if (st.isSymbolicLink()) {
-      throw new MaterializationError(
-        'SYMLINK_ESCAPE',
-        `${rel} has a symlinked parent directory (${relative(cwd, current)})`,
-      );
-    }
-  }
-}
-
-/** Copy the working tree (tracked + untracked, not ignored) into dest. Regular
- * files retain bytes/mode; safe relative links retain their exact link target;
- * unrepresentable links and special files fail closed. node_modules remains a
- * deliberate same-domain dependency link until the isolated backend replaces it. */
-export function materialize(cwd: string, dest: string, dependencyRoot: string | null): void {
-  const listed = workingTreePaths(cwd);
-  if (
-    dependencyRoot &&
-    listed.some((rel) => rel === 'node_modules' || rel.startsWith('node_modules/'))
-  ) {
-    throw new MaterializationError(
-      'TRACKED_NODE_MODULES_CONFLICT',
-      'tracked node_modules conflicts with the attested dependency root',
-    );
-  }
-  const links: Array<{ rel: string; out: string; target: string }> = [];
-  for (const rel of listed) {
-    const src = join(cwd, rel);
-    rejectLinkedParent(cwd, rel);
-    let st;
-    try {
-      st = lstatSync(src);
-    } catch {
-      continue; // listed but gone (racing deletion)
-    }
-    const out = join(dest, rel);
-    mkdirSync(dirname(out), { recursive: true });
-    dropSymlink(out);
-    if (st.isSymbolicLink()) {
-      const target = readlinkSync(src);
-      safeSymlink(target, out, dest, rel);
-      links.push({ rel, out, target });
-    } else if (st.isFile()) {
-      cpSync(src, out, { dereference: true });
-      chmodSync(out, st.mode);
-    } else {
-      throw new MaterializationError(
-        'SPECIAL_FILE',
-        `${rel} is ${st.isDirectory() ? 'a directory' : 'a special file'} where git expects a file`,
-      );
-    }
-  }
-  // ABSOLUTE target. A relative cwd (`--cwd .`, which the envelope passes
-  // through) produced a symlink whose target resolved against the COPY's own
-  // directory — i.e. to itself — so every suite in both runs exited 127 and
-  // verify degraded to permanent SUITE_RED. Fails closed, but an oracle that
-  // always says red is one people switch off.
-  // Validate only after every candidate link exists, so chained links are
-  // resolved as the suite will see them. The dependency root is the one frozen
-  // at verifier entry (or before the agent by tamperward run), never a
-  // rediscovery from candidate-mutated state.
-  for (const link of links) {
-    validateSymlinkGraph(link.target, link.out, dest, dependencyRoot, link.rel);
-  }
-
-  if (dependencyRoot) symlinkSync(dependencyRoot, join(dest, 'node_modules'), 'dir');
-}
-
-/** The working tree as git lists it: tracked plus untracked, not ignored. The
- *  one listing both copies are made from and the overlay's removal loop walks. */
-function workingTreePaths(cwd: string): string[] {
-  return git(['ls-files', '-z', '--cached', '--others', '--exclude-standard'], cwd)
-    .split('\0')
-    .filter(Boolean);
-}
-
-/**
- * Whether the filesystem under `dir` distinguishes path case. Probed, not
- * inferred from the platform: a case-sensitive APFS volume on macOS and a
- * case-insensitive mount on Linux both exist, and the copies are materialised
- * wherever the temp directory lives. One file is created and its case variant
- * looked up; the probe never leaves the file behind.
- *
- * Why it matters (#426): the overlay keys the base-protected set on exact
- * paths, and on a filesystem that collapses case a case-only rename of a base
- * test (`test/foo.test.js` → `test/FOO.test.js`) is the SAME inode as the file
- * the overlay just restored — so a removal loop keyed on exact case unlinked
- * the restored test, and a runner that exits 0 on an empty set reported
- * VERIFIED over an unfixed bug.
- */
-export function probeFilesystemCaseSensitivity(dir: string): boolean {
-  const upper = join(dir, '.tw-case-probe-A');
-  const lower = join(dir, '.tw-case-probe-a');
-  try {
-    writeFileSync(upper, '', { flag: 'wx' });
-    return !existsSync(lower);
-  } finally {
-    rmSync(upper, { force: true });
-  }
-}
-
 /** The case-fold used when the filesystem is case-insensitive. A simple
  *  lower-casing: it models the collapse the issue demonstrated, and is what
  *  the glob lists (all lower-case) match against. Unicode-normalising
@@ -613,16 +336,6 @@ export function caseFoldCollision(paths: string[]): [string, string] | null {
     if (prior === undefined) seen.set(key, p);
   }
   return null;
-}
-
-/** Remove `p` when it is a symlink, so a later write lands in the sandbox
- *  rather than on the link's target. */
-function dropSymlink(p: string): void {
-  try {
-    if (lstatSync(p).isSymbolicLink()) rmSync(p, { force: true });
-  } catch {
-    /* absent: nothing to drop */
-  }
 }
 
 /**

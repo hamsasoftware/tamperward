@@ -60,6 +60,11 @@ final-verdict authorities.
 
 ## Trust boundaries
 
+Shared candidate materialization lives in `src/candidate-snapshot.ts`, independently
+of verification and oracle command orchestration. Its named invariants and current
+filesystem/process limits are recorded in
+[ADR 0003](../adr/0003-shared-candidate-snapshot.md).
+
 | Boundary | Trusted input | Candidate-controlled input | Result |
 | --- | --- | --- | --- |
 | In-loop steering | Installed Tamperward wiring and protected-state reads | Tool-call payload and working tree | Immediate deny or correction signal |
