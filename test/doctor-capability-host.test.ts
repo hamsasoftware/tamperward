@@ -80,9 +80,9 @@ describe('doctor capability contract on the current host (#803)', () => {
     expect(byId['protected-ci'].state).toBe('UNVERIFIED');
     expect(document.authoritative).toBe(!document.checks.some(check => check.state === 'BROKEN'));
     expect(document.capabilities.every(capability => capability.next.includes('`'))).toBe(true);
-    console.info('doctor capability readiness: ' + JSON.stringify({
+    process.stdout.write('doctor capability readiness: ' + JSON.stringify({
       host: process.platform, authoritative: document.authoritative, capabilities: document.capabilities,
-    }));
+    }) + '\n');
     expect(capture(() => runCheck({ cwd, staged: true, json: true })).code).toBe(0);
   });
 
