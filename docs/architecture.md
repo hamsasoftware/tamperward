@@ -63,7 +63,7 @@ final-verdict authorities.
 Shared candidate materialization lives in `src/candidate-snapshot.ts`, independently
 of verification and oracle command orchestration. Its named invariants and current
 filesystem/process limits are recorded in
-[ADR 0003](../adr/0003-shared-candidate-snapshot.md).
+[ADR 0003](https://github.com/hexrift/tamperward/blob/main/adr/0003-shared-candidate-snapshot.md).
 
 | Boundary | Trusted input | Candidate-controlled input | Result |
 | --- | --- | --- | --- |

@@ -20,7 +20,8 @@ and presentation remain separate modules in the existing package.
 
 This extraction changes no function body, output contract, error discriminator or
 execution order. The extraction check compared the comment-free TypeScript AST of all
-15 moved declarations with their original definitions. Security rationale previously
+15 extracted declarations with their original definitions. The listing Git helper is
+copied; verification retains its separate base/overlay helper. Security rationale previously
 beside those definitions is retained below under named invariants.
 The existing errno type assertion moves with `materializationFailureReason`; the
 per-file cast-growth rule therefore reports a relocation warning, without a new
