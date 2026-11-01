@@ -70,6 +70,26 @@ function fixture(): { cwd: string; commit: string } {
 }
 
 describe('release input identity (#804)', () => {
+  it('rejects lossy UTF-8 captures even when reviewed and final snapshots would otherwise compare equal', () => {
+    const { cwd } = fixture();
+    const path = 'src/cli/index.ts';
+    const reviewedBytes = Buffer.concat([Buffer.from('// '), Buffer.from([0xff]), Buffer.from('\nexport const release = true;\n')]);
+    const finalBytes = Buffer.from('// \ufffd\nexport const release = true;\n');
+    writeFileSync(join(cwd, path), reviewedBytes);
+    execute('git', ['add', path], { cwd });
+    execute('git', ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'reviewed bytes'], { cwd });
+    const reviewed = execute('git', ['rev-parse', 'HEAD'], { cwd }).trim();
+    writeFileSync(join(cwd, path), finalBytes);
+    execute('git', ['add', path], { cwd });
+    execute('git', ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'final bytes'], { cwd });
+    const released = execute('git', ['rev-parse', 'HEAD'], { cwd }).trim();
+    expect(reviewedBytes.equals(finalBytes)).toBe(false);
+    expect(execute('git', ['rev-parse', `${reviewed}:${path}`], { cwd })).not.toBe(execute('git', ['rev-parse', `${released}:${path}`], { cwd }));
+    expect(execute('git', ['show', `${reviewed}:${path}`], { cwd })).toBe(execute('git', ['show', `${released}:${path}`], { cwd }));
+    expect(() => compareInputFiles(snapshotInputs(cwd, released).files, workingInputs(cwd))).not.toThrow();
+    expect(() => snapshotInputs(cwd, reviewed)).toThrow(/Git blob bytes differ: src\/cli\/index.ts/);
+  });
+
   it('retains regular executable modes from the Git snapshot', () => {
     const { cwd } = fixture();
     execute('git', ['update-index', '--chmod=+x', 'src/cli/index.ts'], { cwd });

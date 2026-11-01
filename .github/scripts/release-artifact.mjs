@@ -89,11 +89,13 @@ export function snapshotInputs(cwd, commit, run = runCommand) {
   for (const entry of entries) {
     const match = /^([0-9]+) ([^ ]+) ([a-f0-9]+)\t([\s\S]+)$/.exec(entry);
     if (!match) throw new Error('malformed release Git tree entry');
-    const [, mode, type, , path] = match;
+    const [, mode, type, object, path] = match;
     if (!inputPath(path)) continue;
     if (type !== 'blob' || !['100644', '100755'].includes(mode)) throw new Error(`release input is not a regular file: ${path}`);
     modes[path] = mode;
-    files[path] = Buffer.from(run('git', ['show', `${commit}:${path}`], { cwd }));
+    const bytes = Buffer.from(run('git', ['show', `${commit}:${path}`], { cwd }));
+    if (createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex') !== object) throw new Error(`release Git blob bytes differ: ${path}`);
+    files[path] = bytes;
   }
   if (!files['package.json'] || !files['package-lock.json']) throw new Error('release commit has no package manifests');
   return { commit, files, modes };
