@@ -142,11 +142,13 @@ orthogonal signal — are the roadmap beyond it, in roughly that order of cost.
 The ledger, as published: **59 pre-registered bets — 27 refuted, 30 held, 2 the
 data couldn't resolve** — plus five newly staked and unresolved.
 
-*Correction, September 1, 2026: **the exact cumulative totals are withdrawn.**
-The [errata](./errata.md) records that the ledger jumps 56/25 → 59/27 between
-posts 8 and 9 with no identifiable study supplying the two extra refutations, so
-every total from post 9 onward inherits an unreconciled discrepancy. Round 1's
-transfer bet has since flipped from held to refuted as well. Beyond the
+*Correction, September 1, 2026; bookkeeping update October 22, 2026:
+**the exact cumulative totals remain withdrawn.** The
+[errata](./errata.md) now reconciles the 56/25 → 59/27 step between posts 8 and 9:
+the retained laundering-corpus registration adds three bets, one held and two
+refuted, in a commit between the two posts. The earlier claim that no study
+supplied this step was wrong. This resolves that step, not every later as-of-date
+total: Round 1's transfer bet subsequently flipped from held to refuted. Beyond the
 bookkeeping, counting "held" and "refuted" as equal units has no statistical
 interpretation: the ledger mixes deterministic code facts, numeric predictions,
 qualitative mechanism bets, correlated sub-bets, and studies designed

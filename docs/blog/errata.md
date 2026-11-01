@@ -2,32 +2,16 @@
 
 The project's central record of publication corrections, verified against
 primary artifacts before editing. Corrections are listed newest first.
-Outstanding uncertainties the artifacts cannot decide live in "Known,
-unresolved" above them — they are open items, not dated corrections.
+Limits on what these artifact checks establish live in "Known limitations"
+above them; a bookkeeping correction does not certify the underlying outcomes.
 
-## Known, unresolved
+## Known limitations
 
-Three inconsistencies the audit surfaced that the repository's artifacts
-cannot decide. They are recorded here rather than silently "fixed",
-because a correction we cannot verify is just a second guess:
+The original three bookkeeping items are resolved by the dated corrections below.
+This does not certify a cumulative ledger across later reclassifications: the
+withdrawal of exact cumulative totals remains in force in post 9.
 
-1. **The bets ledger jumps 56/25 → 59/27 between posts 8 and 9** (+3 bets,
-   +2 refuted) with no documented intervening study that supplies two
-   refutations; the only uncounted 3-bet registration in that window had
-   all three bets confirmed. Every ledger step from post 9 onward
-   (59 → 64 → 70 → 77) is internally consistent, so the discrepancy sits at
-   exactly one step — a mis-tally at post 8 or 9, or an unrecorded
-   reclassification. The running totals in later posts inherit whichever
-   it was.
-2. **The index summary for the launch post** says "two of which were
-   refuted" where the post's own closing tally is seven of twelve across
-   all its registrations; no artifact pins which scope the index line
-   intended.
-3. **The CHANGELOG carries no `## [1.7.0]` heading** — the 1.7.0 release
-   exists in git history, but its notes are folded into the 1.8.0 section.
-   A repo-record inconsistency rather than an article error.
-
-Also explicitly not re-verified (and so not certified by the audit): the
+Explicitly not re-verified (and so not certified by the audit): the
 seed-study outcome labels as scored by their oracles (verified only against
 the frozen per-study prediction documents plus targeted transcript greps);
 the 67- and 77-guarded-run totals (no artifact enumerates the eligible-run
@@ -35,6 +19,50 @@ sets); and the negative claim over 58 of the 59 trajectories in the
 transient-mutation rescan.
 
 ## Corrections — newest first
+
+## 2026-10-22 — the missing three-bet study found; launch-index scope clarified
+
+The prior unresolved-ledger item was wrong: the repository does contain the study
+that supplies the two additional refutations. The laundering negatives corpus was
+[registered at 12:33:09 UTC on August 29](https://github.com/hexrift/tamperward/commit/7e563d9),
+after post 8 (12:31:48 UTC), and its
+[outcome was committed at 12:35:07 UTC](https://github.com/hexrift/tamperward/commit/733272a7734d6a723eece8be3a1afaf904128822),
+before post 9 (13:13:33 UTC). The frozen registration and recorded outcome identify
+the additions individually:
+
+| Bet | Registered condition | Recorded outcome |
+| --- | --- | --- |
+| lcx-1 | annotation candidate fires on at least 4% of pooled commits | held: 129/1,227, reported as 10.5% |
+| lcx-2 | assertion candidate fires on at least 10% | refuted: 92/1,227, reported as 7.5% |
+| lcx-3 | both candidates fire on at least 3× the written comparator (111 commits) | refuted as written; the registration's poorly chosen comparator is disclosed in the outcome |
+
+Thus the recorded step is **56/25/29/2 + 3/2/1/0 = 59/27/30/2**
+(total/refuted/held/unresolvable). The preceding
+[tuned-FP registration](https://github.com/hexrift/tamperward/blob/main/harness/PREDICTION-tuned-fp.md)
+already ends at 56/25/29/2; it is not the missing study. The
+[laundering-corpus record](https://github.com/hexrift/tamperward/blob/733272a7734d6a723eece8be3a1afaf904128822/harness/PREDICTION-launder-corpus.md)
+explicitly ends at 59/27/30/2. This is a reconciliation of retained registration
+and outcome records, not a rerun or independent adjudication of the corpus.
+It resolves this step without reinstating every later cumulative total: later
+reclassifications, including the Round 1 transfer bet, still require their own
+as-of-date reconciliation, and bets are not interchangeable statistical units.
+
+The launch-post index no longer says "two of which were refuted" with an unspecified
+scope. It now describes the prediction tables without a numerical tally. The
+article's own closing tally remains explicitly scoped to its three registrations
+(seven of twelve refuted). No historical intent is inferred for the old index phrase,
+and no outcome has been rescored.
+
+## 2026-10-21 — v1.7.0 changelog heading restored
+
+The v1.7.0 release notes had been folded into the v1.8.0 section. The heading
+`## [1.7.0] — 2026-08-30` is restored immediately before the
+`test-content-removal` notes, without changing the historical release prose.
+The [tagged changelog](https://github.com/hexrift/tamperward/blob/56951deb7d615b40f01ca95bc0668aa67666f3e1/CHANGELOG.md)
+and [published v1.7.0 release](https://github.com/hexrift/tamperward/releases/tag/v1.7.0)
+establish the heading, date and notes. This resolves the former third
+"Known, unresolved" item; the other two bookkeeping items are addressed by the
+October 22 correction above.
 
 ## 2026-09-09 — round 4 preregistration published; two mid-course deviations disclosed
 

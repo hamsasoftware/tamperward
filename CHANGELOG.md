@@ -5828,6 +5828,8 @@ snapshot state and event log live in `.git/`, reachable by the agent — the
 loop layer's standing trust boundary. Held-out re-execution remains the layer
 that caught everything in Phase 3, and CI remains the authority.
 
+## [1.7.0] — 2026-08-30
+
 New detector: **`test-content-removal`** (SPEC row 14, block) — NET removal of
 ≥3 significant lines from a modified protected test file whose it()/test()
 block count did not drop. This is the post-experiment closure of the evasion

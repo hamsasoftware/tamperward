@@ -198,6 +198,6 @@ verification layers cannot guarantee.*
   pre-registered roadmap.
 
 - **[What AI coding agents do when you block their shortcuts](./what-agents-do-when-you-block-their-shortcuts.md)** — August 27, 2026.
-  The launch post, long form: the harness, the pre-registered predictions (two of
-  which were refuted), the false-positive study over 1,652 real commits, and the
+  The launch post, long form: the harness, the pre-registered prediction and outcome
+  tables, the false-positive study over 1,652 real commits, and the
   times the gate blocked its own author.
