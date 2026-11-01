@@ -229,3 +229,12 @@ and treat the **exit code** as the authoritative pass/fail — the two agree, an
 code is the contract even when a document is truncated. Because major 1 is additive, parse
 defensively and ignore unknown fields. A worked CI example is on
 [Integrate](../integrate.md#consuming-machine-output).
+
+
+Completed `verify-v1` adjudications may include `evidence_binding`, containing the
+actual `head`, `base`, `tree`, `gate_version`, `policy_hash`, `verifier_hash`,
+`completed: true` and `integrity: "CLEAN"`. The field is absent for incomplete
+verification and does not authenticate an unsigned producer. `receipt-v1` and
+`reconcile-v1` add `oracle_assurance` with the same `suite-exit-only` report and
+residual as `verify-v1`; older receipts remain readable. The receipt's existing
+evidence digest retains its original identity/stage encoding.

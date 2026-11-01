@@ -1,4 +1,15 @@
-# Admission consumer for v1 verdict statements
+# Admission consumer for signed verification evidence
+
+## Evidence inventory
+
+| Existing producer or transport | Established evidence | Admission limit |
+| --- | --- | --- |
+| `verify` terminal / `verify-v1` JSON | Candidate and pristine suite exits, integrity and runtime checks; `suite-exit-only` | Candidate source executes in the suite process and may terminate or interpose on assertions. Execution isolation does not establish semantic isolation. |
+| `receipt-v1` | Unsigned local `VERIFIED` identity and bounded stage results | Its digest detects inconsistency, not producer authenticity. It grants no admission authority. |
+| `signed-verdict-v1` | Trusted Ed25519 key signs revision, policy, verdict, audience, nonce and validity | No tree, verifier-configuration digest, completion, explicit exception or assurance binding. Preserve v1 consumers and bytes. |
+| `oracle-v1` / `oracle-v2` | Independent host completion and comparison of finite CommonJS JSON response cases | Separate unsigned evidence. Neither a suite result nor a signed suite statement proves this oracle ran. |
+
+## Existing v1 consumer contract
 
 An admission consumer decides whether a **particular request** may proceed. A
 `VERIFIED` string, an unsigned receipt, or a valid signature without an independently
@@ -75,3 +86,13 @@ admitting it as a stronger claim.
 The [external oracle](./external-oracle.md) is an opt-in finite JSON function
 profile, not an upgrade to ordinary `verify`. Neither the example nor a signed
 `VERIFIED` statement establishes its completion or provenance.
+
+## Completed suite producer evidence
+
+Completed verification reports include an additive `evidence_binding`: `head`,
+resolved `base`, adjudicated `tree`, `gate_version`, `policy_hash`, `verifier_hash`,
+`completed: true` and `integrity: "CLEAN"`. The producer captures these values from
+the policy, command, budget, backend and candidate it actually uses. Incomplete,
+budget-exceeded, dependency-drift or cannot-verify reports do not supply completed
+evidence. This metadata does not authenticate an unsigned report. The default v1
+signed statement remains unchanged and does not include this producer binding.

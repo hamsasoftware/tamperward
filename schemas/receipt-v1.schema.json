@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/hexrift/tamperward/v2.38.0/schemas/receipt-v1.schema.json",
+  "$id": "https://raw.githubusercontent.com/hexrift/tamperward/v2.50.0/schemas/receipt-v1.schema.json",
   "title": "TamperWard local verification receipt v1",
   "type": "object",
   "required": [
@@ -13,6 +13,30 @@
     "evidence_digest"
   ],
   "properties": {
+    "oracle_assurance": {
+      "type": "object",
+      "required": [
+        "level",
+        "semantic_isolation",
+        "candidate_code_executes_in_oracle_process",
+        "limitation"
+      ],
+      "properties": {
+        "level": {
+          "const": "suite-exit-only"
+        },
+        "semantic_isolation": {
+          "const": false
+        },
+        "candidate_code_executes_in_oracle_process": {
+          "const": true
+        },
+        "limitation": {
+          "const": "candidate source executes inside the configured suite process and may terminate or interpose on that in-process oracle; isolated-container is execution-domain isolation, not semantic/oracle isolation"
+        }
+      },
+      "additionalProperties": false
+    },
     "schema_version": {
       "const": 1
     },

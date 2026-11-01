@@ -51,6 +51,7 @@ import { repoRoot } from '../repo-context';
 import { materialize, materializationFailureReason, probeFilesystemCaseSensitivity, safeSymlink, validateSymlinkGraph, workingTreePaths } from '../candidate-snapshot';
 import { assertRev } from '../git/build';
 import { trustedGitEnv } from '../git/trusted';
+import { readTrustedGit } from '../git/process';
 import { treeFingerprint } from '../fingerprint';
 import {
   attestDependencyEnvironment,
@@ -82,9 +83,15 @@ import {
   invalidateVerificationRecordIfCurrent,
   readVerificationRecord,
   recordVerification,
+  verificationPolicyDigest,
+  verificationVerifierDigest,
   type VerificationInputs,
 } from '../verification-state';
 import { receiptFromRecord, removeStoredReceipt, storeReceipt } from '../verification-receipt';
+import { suiteExitAssurance as oracleAssuranceReport } from '../oracle-assurance';
+import { TW_VERSION } from '../wiring';
+export { oracleAssuranceReport };
+export type { OracleAssuranceReport } from '../oracle-assurance';
 import {
   diagnosticLines,
   runCapturedProcessSync,
@@ -161,30 +168,6 @@ export interface RunResult {
   /** The suite exited but a process still held stdout open — not quiescent. */
   pipeHeldOpen?: boolean;
   diagnostics?: SuiteDiagnostics;
-}
-
-export interface OracleAssuranceReport {
-  level: 'suite-exit-only';
-  semantic_isolation: false;
-  candidate_code_executes_in_oracle_process: true;
-  limitation: string;
-}
-
-/**
- * TamperWard can isolate the verifier's filesystem/runtime authority, but the
- * configured suite still executes candidate source inside its own oracle
- * process. A zero process exit therefore proves only that the suite process
- * exited successfully; it does not prove that every trusted assertion,
- * collection hook, or framework callback ran to completion.
- */
-export function oracleAssuranceReport(): OracleAssuranceReport {
-  return {
-    level: 'suite-exit-only',
-    semantic_isolation: false,
-    candidate_code_executes_in_oracle_process: true,
-    limitation:
-      'candidate source executes inside the configured suite process and may terminate or interpose on that in-process oracle; isolated-container is execution-domain isolation, not semantic/oracle isolation',
-  };
 }
 
 export const OVERLAY_CLASSES = ['tests', 'snapshots', 'config'] as const;
@@ -1132,6 +1115,15 @@ function runVerifyImpl(opts: VerifyOpts, measurement?: { comparison?: string; oo
     return cannotVerify('BASE_UNRESOLVABLE', `cannot resolve base rev "${opts.base ?? 'HEAD'}"`);
   }
 
+  let candidateHead: string;
+  try {
+    candidateHead = readTrustedGit(['rev-parse', '--verify', 'HEAD^{commit}'], cwd).trim();
+  } catch {
+    return cannotVerify('BASE_UNRESOLVABLE', 'cannot resolve candidate HEAD for verification evidence', {
+      verifier_backend: backendReport(), dependency_environment: dependencyReport(), oracle_assurance: oracleAssuranceReport(),
+    });
+  }
+
   // SEQUENCING IS THE CONTROL (H1). The two copies used to be siblings under one
   // root, both materialised and the overlay fully applied, BEFORE the visible run
   // started. The visible run executes the candidate's code — so the candidate's
@@ -1193,6 +1185,12 @@ function runVerifyImpl(opts: VerifyOpts, measurement?: { comparison?: string; oo
   // pristine copy is made of.
   const protectedIgnored = (rel: string): boolean => isProtected(rel, policy);
   const treeBefore = treeFingerprint(cwd, protectedIgnored);
+  const evidenceIdentity = {
+    head: candidateHead,
+    base, tree: treeBefore, gate_version: TW_VERSION,
+    policy_hash: verificationPolicyDigest(policy),
+    verifier_hash: verificationVerifierDigest(policy, cmd, budget),
+  };
   if (measurement) {
     try { measurement.comparison = measurementComparison(git(['rev-parse', 'HEAD'], cwd).trim(), treeBefore, cmd); } catch { /* evidence only */ }
   }
@@ -1507,6 +1505,7 @@ function runVerifyImpl(opts: VerifyOpts, measurement?: { comparison?: string; oo
         // tree a receipt binds, and reconcile must report NON_APPLICABLE rather than
         // attribute CI's verdict to a tree CI never ran (#601 re-review).
         adjudicated_tree: treeBefore,
+        ...(verdict !== 'BUDGET_EXCEEDED' && !opts.allowDepDrift ? { evidence_binding: { ...evidenceIdentity, completed: true, integrity: 'CLEAN' } } : {}),
         command: cmd,
         budget_secs: budget,
         visible: stageJson(visible),
