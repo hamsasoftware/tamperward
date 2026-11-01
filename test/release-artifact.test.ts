@@ -57,11 +57,10 @@ const execute: CommandRunner = (command, args, options) => execFileSync(command,
 function fixture(): { cwd: string; commit: string } {
   const cwd = temporary();
   writeFiles(cwd, inputs());
-  const cli = '#!/usr/bin/env node\nconsole.log(JSON.stringify({schema_version:1,findings:[]}));\n';
   writeFileSync(join(cwd, 'build.mjs'), [
     "import { mkdirSync, writeFileSync } from 'node:fs';",
     "mkdirSync('dist/cli', { recursive: true });",
-    `writeFileSync('dist/cli/index.js', ${JSON.stringify(cli)});`,
+    "writeFileSync('dist/cli/index.js', '#!/usr/bin/env node\\nconsole.log(JSON.stringify({schema_version:1,findings:[]}));\\n');",
   ].join('\n'));
   execute('git', ['init', '-q'], { cwd });
   execute('git', ['add', '.'], { cwd });
