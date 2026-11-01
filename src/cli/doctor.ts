@@ -19,6 +19,7 @@ export type { GitHubProtectionSnapshot } from '../github-authority';
 import { readStateFile } from '../disk';
 import { paint, severityColour, BOLD, type Severity } from './render/status';
 import { capabilityReadiness, type CapabilityReadiness } from '../capability-readiness';
+import { prepareVerifierBackend } from '../verifier-backend';
 
 export interface DoctorOpts {
   cwd?: string;
@@ -164,6 +165,24 @@ function permissionWrites(value: unknown): string[] | null {
   return Object.entries(mapping)
     .filter(([, permission]) => typeof permission === 'string' && /write/i.test(permission))
     .map(([name, permission]) => `${name}=${String(permission)}`);
+}
+
+function containerPreflightCheck(verify: ReturnType<typeof loadPolicy>['verify']): DoctorCheck {
+  try {
+    const backend = prepareVerifierBackend(verify);
+    return {
+      id: 'container-preflight',
+      state: backend.available ? 'OK' : 'BROKEN',
+      detail: backend.available
+        ? `Docker authority and locally present digest-pinned image ${backend.image} passed the read-only preflight; verify repeats it before each execution`
+        : `${backend.reason ?? 'Docker authority preflight failed'}; fix Docker authority and preload the pinned image, then rerun tamperward doctor`,
+    };
+  } catch (error) {
+    return {
+      id: 'container-preflight', state: 'BROKEN',
+      detail: `Docker authority preflight could not complete: ${error instanceof Error ? error.message : String(error)}; inspect Docker and rerun tamperward doctor`,
+    };
+  }
 }
 
 function workflowPermissionCheck(
@@ -359,9 +378,10 @@ export function collectLocalPosture(
       state: backend === 'container' ? 'OK' : 'WARN',
       detail:
         backend === 'container'
-          ? `isolated-container verifier; budget ${policy.verify.budget}s/stage; ${inputs} declared verify.inputs glob(s); runtime/image availability is checked by verify`
+          ? `isolated-container verifier; budget ${policy.verify.budget}s/stage; ${inputs} declared verify.inputs glob(s); container-preflight reports runtime/image authority and verify rechecks it`
           : `checkpointed-local verifier; budget ${policy.verify.budget}s/stage; ${inputs} declared verify.inputs glob(s); same-host/self-restoring mutation remains a documented residual`,
     });
+    if (backend === 'container') checks.push(containerPreflightCheck(policy.verify));
   }
 
   checks.push(lifecyclePlatformCheck());
@@ -665,12 +685,14 @@ export function diagnose(opts: DoctorOpts = {}): DoctorOutcome {
   }
 
   let postureWorkflows: string[] | undefined = opts.workflow ? [opts.workflow] : undefined;
-  const fail = (id: string, message: string): DoctorOutcome =>
-    failed(
+  const fail = (id: string, message: string): DoctorOutcome => ({
+    ...failed(
       message,
       id,
       collectLocalPosture(cwd, policy, postureWorkflows, Boolean(opts.workflow)),
-    );
+    ),
+    verifierBackend: policy.verify?.backend ?? 'local',
+  });
 
   if (!policy.verify?.command) {
     return fail('verifier', 'trusted policy has no verify.command; generated CI cannot verify this repository');

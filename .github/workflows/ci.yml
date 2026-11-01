@@ -131,6 +131,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx vitest run test/platform-support.test.ts
+      - name: Doctor capability readiness on the host
+        run: npx vitest run test/capability-readiness.test.ts test/doctor-capability-host.test.ts
 
   # Round-4 orchestration and the pilot-task verifier. Previously validated only by
   # hand, so green CI said nothing about them — and the verifier decides whether a
