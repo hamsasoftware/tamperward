@@ -1,9 +1,9 @@
 # Audit history and `tamperward stats`
 
-TamperWard can keep a privacy-safe record of the integrity findings its Claude Code
-hooks raise. This is **measurement**, not enforcement: failing to write an audit event
-never changes an allow/deny decision, and the audit history is never read as an
-authority input by `check`, `verify`, `run`, the hook, or CI.
+TamperWard can keep privacy-safe integrity findings from its Claude Code hooks and
+opt-in verification and bare-suite timings. This is **measurement**, not enforcement:
+failing to write an audit event never changes an allow/deny decision. The audit history
+is never read as an authority input by `check`, `verify`, `run`, the hook, or CI.
 
 This is useful for dogfooding questions such as:
 
@@ -54,8 +54,9 @@ for: `hook_latency_ms` (whole milliseconds from the hook reading its input to th
 being written; the PreToolUse and Stop hooks record it on every deny they log),
 `verify_wall_clock_ms` and `bare_suite_wall_clock_ms` (a `verify` run and the same suite
 without TamperWard, for a producer that measures both), and `oob_signoff` (whether an
-out-of-band sign-off was needed to clear the finding). Absent means unmeasured; no
-in-tree producer writes the last three yet.
+out-of-band sign-off was needed to clear the finding). Absent means unmeasured. These
+older finding-attached fields remain accepted; automatic verification and bare-suite
+measurements use the separate sidecar described below (2.44.0).
 
 The writer is allowlist-only. It does **not** serialise prompts, tool command bodies,
 source/evidence text, filenames, absolute paths, environment values, credentials, or
@@ -66,6 +67,37 @@ The published event schema is
 [`schemas/audit-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/audit-v1.schema.json).
 The `stats --json` aggregate has its own
 [`schemas/stats-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/stats-v1.schema.json).
+
+### Verification and bare-suite measurements
+
+With audit enabled, `verify` records its whole lifecycle duration and actual verdict in
+`<audit-path>.measurements`, including verification nested in `run`. With `auto`, this is
+`.git/tamperward/audit.jsonl.measurements` (using the actual Git directory for a worktree).
+An explicitly requested bare-suite comparator writes to the same sidecar:
+
+```bash
+TAMPERWARD_AUDIT_LOG=auto tamperward measure-suite --cmd 'npm test' --budget 300
+```
+
+This runs the command in the **live checkout** and may create normal suite outputs. It
+measures process supervision without verification/materialization or fingerprint-check
+costs; it neither verifies nor approves the candidate. Use the same suite command,
+checkout and machine as the verification sample. Pair only identical non-missing
+`comparison` hashes, control dependencies and run order/cache effects, and retain the
+outcomes beside the timings. Unpaired percentiles are not an overhead ratio.
+
+The strict [measurement-v1 schema](https://github.com/hexrift/tamperward/blob/main/schemas/measurement-v1.schema.json)
+records a random id, timestamp, kind, outcome and duration, with optional comparison hash
+and actual sign-off use. It retains no raw command, path, machine name or approval token.
+Incomplete samples are reported separately and excluded from timing percentiles; missing
+sign-off data is not evidence that no sign-off was used. Local measurements are mutable,
+non-authoritative evidence. Audit opt-out writes no sidecar, and a refused write does not
+change the command's verdict.
+
+For a consented deployment, follow the [production pilot protocol](../research/pilot-protocol.md)
+for exposure counts, independent false-positive adjudication, controlled timing and
+publication permission. The measurement producers do not supply participant consent or
+constitute a production-pilot result.
 
 ### The older deny log
 
@@ -98,19 +130,23 @@ npx tamperward stats --since 12h
 npx tamperward stats --json
 ```
 
-By default `stats` reads the auto audit path. Use `--file` for an exported or
-downloaded JSONL file:
+By default `stats` reads the auto audit path and its `.measurements` sidecar. Use
+`--file` for an exported or downloaded JSONL file; keep its sidecar beside it with
+the same `.measurements` suffix:
 
 ```bash
 npx tamperward stats --file ./events.jsonl
 ```
 
 The text view reports event, block, warning and hashed-session counts, followed by
-counts by rule and enforcement surface, then a `Measures` block when any event carried
-one: nearest-rank p50, p95 and max of `hook_latency_ms`, `verify_wall_clock_ms` and
-`bare_suite_wall_clock_ms` over the events that carry them, with the sample count, and
-the number of out-of-band sign-offs. `--json` emits the same deterministic aggregate as
-one JSON document (`latency` is null per measure when nothing was measured). The file is read in one pass, one line at a time,
+counts by rule and enforcement surface, then measured hook/verify/bare-suite durations:
+nearest-rank p50, p95 and max with sample counts, plus out-of-band sign-off counts.
+Completed sidecar samples join the timing histograms; incomplete samples stay out.
+Sidecar invocation/incomplete/sign-off counts appear separately under `measurements`
+in JSON and never increase finding or session counts. The finding-only GitHub publisher
+does not automatically ingest measurement sidecars. `--json` emits the same deterministic
+aggregate as one JSON document (`latency` is null per measure when nothing was measured).
+The file is read in one pass, one line at a time,
 so an audit log of any length costs memory only for the aggregate; a line longer
 than 16 KiB is not an audit-v1 event and stops the command at exit 2.
 
