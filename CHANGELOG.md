@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.52.1] — 2026-11-01
+
+### Fixed
+
+- Doctor checks the configured digest-pinned container backend through the shared read-only authority preflight before reporting container readiness. Missing Docker or images stay blocked without pulling or starting a container (#803).
+- Exercise doctor capability output on the existing Linux, macOS and Windows platform matrix while retaining the Linux-only lifecycle authority requirement.
+
 ## [2.52.0] — 2026-11-01
 
 ### Added
