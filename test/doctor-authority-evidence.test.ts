@@ -1,12 +1,31 @@
 import { describe, expect, it, vi } from 'vitest';
-import { evaluateGitHubProtection, githubAuthority, REPOSITORY_REQUIRED_CHECKS } from '../src/cli/doctor';
+import {
+  evaluateGitHubProtection,
+  githubAuthority,
+  REPOSITORY_REQUIRED_CHECKS,
+  REPOSITORY_REQUIRED_CHECK_INTEGRATION_ID,
+} from '../src/cli/doctor';
 
 const opts = { repo: 'acme/project', branch: 'main', checkContract: 'tamperward-repo' as const };
 const prefix = 'repos/acme/project';
-function rulesFor(checks: readonly string[] = REPOSITORY_REQUIRED_CHECKS): unknown[] {
+function rulesFor(
+  checks: readonly string[] = REPOSITORY_REQUIRED_CHECKS,
+  repository = 'acme/project',
+  pinIntegration = true,
+): unknown[] {
   return [
-    { type: 'pull_request', ruleset_id: 7, ruleset_source: 'acme/project', ruleset_source_type: 'Repository', parameters: { require_code_owner_review: true, dismiss_stale_reviews_on_push: true } },
-    { type: 'required_status_checks', ruleset_id: 7, ruleset_source: 'acme/project', ruleset_source_type: 'Repository', parameters: { required_status_checks: checks.map(context => ({ context })) } },
+    { type: 'pull_request', ruleset_id: 7, ruleset_source: repository, ruleset_source_type: 'Repository', parameters: { require_code_owner_review: true, dismiss_stale_reviews_on_push: true } },
+    {
+      type: 'required_status_checks',
+      ruleset_id: 7,
+      ruleset_source: repository,
+      ruleset_source_type: 'Repository',
+      parameters: {
+        required_status_checks: checks.map(context => pinIntegration
+          ? { context, integration_id: REPOSITORY_REQUIRED_CHECK_INTEGRATION_ID }
+          : { context }),
+      },
+    },
   ];
 }
 function classicFor(checks: readonly string[] = REPOSITORY_REQUIRED_CHECKS): unknown {
@@ -22,7 +41,8 @@ interface Fixture {
   rulesError?: string;
   detailError?: string;
 }
-function apiFor(fixture: Fixture = {}) {
+function apiFor(fixture: Fixture = {}, repository = 'acme/project') {
+  const prefix = `repos/${repository}`;
   return vi.fn((_cwd: string, endpoint: string): unknown => {
     switch (endpoint) {
       case `${prefix}/rules/branches/main?per_page=100&page=1`:
@@ -76,10 +96,52 @@ describe('GitHub authority evidence survives fallback (#795)', () => {
     expect(githubAuthority(opts, '.', apiFor()).findings).toEqual([]);
   });
 
+  it('requires every repository check to be bound to the GitHub Actions integration', () => {
+    const checks = REPOSITORY_REQUIRED_CHECKS.map(context => ({
+      context,
+      integration_id: REPOSITORY_REQUIRED_CHECK_INTEGRATION_ID,
+    }));
+    checks[0] = { context: checks[0].context, integration_id: 0 };
+    const rules = rulesFor();
+    const checkRule = rules[1] as { parameters: { required_status_checks: unknown[] } };
+    checkRule.parameters.required_status_checks = checks;
+    expect(evaluateGitHubProtection(
+      { rules, bypassActors: [] },
+      'tamperward',
+      REPOSITORY_REQUIRED_CHECKS,
+      REPOSITORY_REQUIRED_CHECK_INTEGRATION_ID,
+    ))
+      .toContain(`bind status check ${checks[0].context} to GitHub Actions integration ${REPOSITORY_REQUIRED_CHECK_INTEGRATION_ID}`);
+  });
+
+  it('does not treat an unpinned classic context as app-bound', () => {
+    const rules = rulesFor();
+    const classic = {
+      required_status_checks: {
+        contexts: ['typecheck'],
+      },
+    };
+    expect(evaluateGitHubProtection(
+      { rules, branchProtection: classic, bypassActors: [] },
+      'tamperward',
+      REPOSITORY_REQUIRED_CHECKS,
+      REPOSITORY_REQUIRED_CHECK_INTEGRATION_ID,
+    ))
+      .toContain(`bind status check typecheck to GitHub Actions integration ${REPOSITORY_REQUIRED_CHECK_INTEGRATION_ID}`);
+  });
+
   it('does not query optional classic protection once complete ruleset evidence suffices', () => {
     const api = apiFor({ rules: rulesFor() });
     expect(githubAuthority(opts, '.', api).findings).toEqual([]);
     expect(api).not.toHaveBeenCalledWith('.', `${prefix}/branches/main/protection`);
+  });
+
+  it('enforces the pinned source for the repository-specific doctor contract', () => {
+    const repository = 'hexrift/tamperward';
+    const ownOpts = { repo: repository, branch: 'main', checkContract: 'tamperward-repo' as const };
+    const api = apiFor({ rules: rulesFor(REPOSITORY_REQUIRED_CHECKS, repository, false) }, repository);
+    expect(githubAuthority(ownOpts, '.', api).findings)
+      .toContain(`bind status check typecheck to GitHub Actions integration ${REPOSITORY_REQUIRED_CHECK_INTEGRATION_ID}`);
   });
 
   it('cannot improve a safe verdict by adding unknown or adverse bypass evidence', () => {

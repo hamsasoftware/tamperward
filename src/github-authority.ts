@@ -32,14 +32,23 @@ export const REPOSITORY_REQUIRED_CHECKS = [
   'verifier-container',
 ] as const;
 
+export const REPOSITORY_REQUIRED_CHECK_INTEGRATION_ID = 15368;
+
 export function evaluateGitHubProtection(
   snapshot: GitHubProtectionSnapshot,
   requiredCheck = 'tamperward',
   requiredChecks: readonly string[] = [requiredCheck],
+  expectedIntegrationId?: number,
 ): string[] {
   let hasCodeOwnerReview = false;
   let dismissesStaleReviews = false;
   const presentChecks = new Set<string>();
+  const checkIntegrations = new Map<string, unknown[]>();
+  const recordIntegration = (context: string, integrationId: unknown): void => {
+    const observed = checkIntegrations.get(context) ?? [];
+    observed.push(integrationId);
+    checkIntegrations.set(context, observed);
+  };
 
   if (Array.isArray(snapshot.rules)) {
     for (const raw of snapshot.rules) {
@@ -57,7 +66,10 @@ export function evaluateGitHubProtection(
         if (Array.isArray(checks)) {
           for (const rawCheck of checks) {
             const check = asMapping(rawCheck);
-            if (typeof check?.context === 'string') presentChecks.add(check.context);
+            if (typeof check?.context === 'string') {
+              presentChecks.add(check.context);
+              recordIntegration(check.context, check.integration_id);
+            }
           }
         }
       }
@@ -72,14 +84,25 @@ export function evaluateGitHubProtection(
   const status = asMapping(classic?.required_status_checks);
   if (status) {
     const contexts = status.contexts;
-    if (Array.isArray(contexts)) {
-      for (const context of contexts) if (typeof context === 'string') presentChecks.add(context);
-    }
     const checks = status.checks;
+    const checksWithContext = new Set<string>();
     if (Array.isArray(checks)) {
       for (const rawCheck of checks) {
         const check = asMapping(rawCheck);
-        if (typeof check?.context === 'string') presentChecks.add(check.context);
+        if (typeof check?.context === 'string') {
+          presentChecks.add(check.context);
+          checksWithContext.add(check.context);
+          recordIntegration(check.context, check.app_id);
+        }
+      }
+    }
+    // The legacy `contexts` field carries no source identity. When GitHub also
+    // provides the richer `checks` entries, use those instead of double counting.
+    if (Array.isArray(contexts)) {
+      for (const context of contexts) {
+        if (typeof context !== 'string') continue;
+        presentChecks.add(context);
+        if (!checksWithContext.has(context)) recordIntegration(context, undefined);
       }
     }
   }
@@ -91,6 +114,17 @@ export function evaluateGitHubProtection(
       ? 'require the ' + missing[0] + ' status check'
       : 'require status checks: ' + missing.join(', '),
   );
+  if (expectedIntegrationId !== undefined) {
+    for (const check of requiredChecks) {
+      if (!presentChecks.has(check)) continue;
+      const integrations = checkIntegrations.get(check) ?? [];
+      if (integrations.length === 0 || integrations.some(id => id !== expectedIntegrationId)) {
+        findings.push(
+          'bind status check ' + check + ' to GitHub Actions integration ' + expectedIntegrationId,
+        );
+      }
+    }
+  }
   if (!hasCodeOwnerReview) findings.push('require Code Owner review');
   if (!dismissesStaleReviews) findings.push('dismiss stale pull request approvals on new pushes');
   // GitHub omits bypass_actors when the requester cannot inspect it. Absence

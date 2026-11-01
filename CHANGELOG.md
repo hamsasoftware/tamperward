@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.52.2] — 2026-11-01
+
+### Fixed
+
+- Doctor verifies that TamperWard's required GitHub status checks are bound to the
+  GitHub Actions integration, including classic-protection fallback (#796).
+
 ## [2.52.1] — 2026-11-01
 
 ### Fixed
