@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import {
-  compareInputFiles, consumerLock, inputDigest, normalizePackResult,
-  snapshotInputs, validateSchemas, verifyCli, verifyPackageTree, workingInputs,
+  compareInputFiles, consumerLock, inputDigest, normalizePackResult, publishArtifact,
+  snapshotInputs, validateSchemas, verifyArtifact, verifyCli, verifyPackageTree, workingInputs,
   type CommandRunner, type InputFiles,
 } from '../.github/scripts/release-artifact.mjs';
 
@@ -198,4 +198,51 @@ describe('packed release contents (#804)', () => {
     };
     expect(() => verifyCli(root, temporary(), run)).toThrow('installed CLI exited 2');
   });
+});
+
+describe('release artifact lifecycle (#804)', () => {
+  it('builds and packs once, installs the exact tarball, and publishes only unchanged bytes with scripts disabled', () => {
+    const { cwd, commit } = fixture();
+    const commands: Array<[string, string[]]> = [];
+    const run: CommandRunner = (command, args, options) => {
+      commands.push([command, args]);
+      if (command === 'npm' && args[0] === 'publish') return '';
+      return execute(command, args, options);
+    };
+    const receiptPath = verifyArtifact(cwd, { expectedCommit: commit, expectedVersion: '1.0.0', run, tempRoot: temporary() });
+    const receipt = JSON.parse(readFileSync(receiptPath, 'utf8'));
+    expect(existsSync(receipt.artifact)).toBe(true);
+    expect(commands.filter(([command, args]) => command === 'npm' && args[0] === 'pack')).toHaveLength(1);
+    expect(commands.find(([command, args]) => command === 'npm' && args[0] === 'ci')?.[1]).toEqual(expect.arrayContaining(['--offline', '--ignore-scripts', '--omit=dev']));
+    publishArtifact(cwd, receiptPath, { expectedCommit: commit, expectedVersion: '1.0.0', run });
+    expect(commands.at(-1)).toEqual(['npm', ['publish', receipt.artifact, '--ignore-scripts', '--provenance', '--access', 'public', '--tag', 'latest']]);
+    writeFileSync(receipt.artifact, 'changed after verification');
+    expect(() => publishArtifact(cwd, receiptPath, { expectedCommit: commit, expectedVersion: '1.0.0', run })).toThrow(/artifact.*changed/i);
+  }, 60_000);
+
+  it('blocks publish after release inputs change or when the planned identity differs', () => {
+    const { cwd, commit } = fixture();
+    const receiptPath = verifyArtifact(cwd, { expectedCommit: commit, expectedVersion: '1.0.0', run: execute, tempRoot: temporary() });
+    const publish: CommandRunner = () => { throw new Error('unexpected publish'); };
+    expect(() => publishArtifact(cwd, receiptPath, { expectedCommit: commit, expectedVersion: '1.0.1', run: publish })).toThrow(/identity/);
+    writeFileSync(join(cwd, 'src/cli/index.ts'), 'changed after verification');
+    expect(() => publishArtifact(cwd, receiptPath, { expectedCommit: commit, expectedVersion: '1.0.0', run: execute })).toThrow(/inputs.*changed/i);
+  }, 60_000);
+
+  it('fails before building when the planned version disagrees with the commit', () => {
+    const { cwd, commit } = fixture();
+    expect(() => verifyArtifact(cwd, { expectedCommit: commit, expectedVersion: '1.0.1', run: execute, tempRoot: temporary() })).toThrow(/version/);
+    expect(existsSync(join(cwd, 'dist'))).toBe(false);
+  });
+
+  it('rejects inputs modified by the build before any package is made', () => {
+    const { cwd, commit } = fixture();
+    const run: CommandRunner = (command, args, options) => {
+      if (command === 'npm' && args[0] === 'pack') throw new Error('unexpected pack');
+      const output = execute(command, args, options);
+      if (command === 'npm' && args[0] === 'run') writeFileSync(join(cwd, 'src/cli/index.ts'), 'changed by build');
+      return output;
+    };
+    expect(() => verifyArtifact(cwd, { expectedCommit: commit, expectedVersion: '1.0.0', run, tempRoot: temporary() })).toThrow('src/cli/index.ts');
+  }, 60_000);
 });

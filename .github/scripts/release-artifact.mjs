@@ -1,7 +1,9 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { lstatSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { basename, dirname, join } from 'node:path';
+import { appendFileSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 import Ajv2020 from 'ajv/dist/2020.js';
 import semver from 'semver';
@@ -115,7 +117,7 @@ export function consumerLock(manifest, lock, artifact, bytes) {
       ...structuredClone(lock.packages),
       '': consumer,
       'node_modules/tamperward': {
-        version: manifest.versiond: dependency, integrity: `sha512-${hash(bytes, 'sha512', 'base64')}`,
+        version: manifest.version, resolved: dependency, integrity: `sha512-${hash(bytes, 'sha512', 'base64')}`,
         dependencies: manifest.dependencies, optionalDependencies: manifest.optionalDependencies,
         peerDependencies: manifest.peerDependencies, peerDependenciesMeta: manifest.peerDependenciesMeta,
         bin: manifest.bin, engines: manifest.engines, license: manifest.license,
@@ -167,4 +169,76 @@ export function verifyCli(root, fixture, run = runCommand) {
   const document = JSON.parse(output);
   const validate = new Ajv2020({ strict: true, allErrors: true }).compile(json(readFileSync(join(root, 'schemas/check-v1.schema.json'))));
   if (!validate(document) || document.findings.length !== 0) throw new Error(`installed CLI output failed the shipped check schema: ${JSON.stringify(validate.errors)}`);
+}
+
+export function verifyArtifact(cwd, options) {
+  const run = options.run ?? runCommand;
+  const expected = snapshotInputs(cwd, options.expectedCommit, run);
+  assertVersion(expected.files, options.expectedVersion);
+  compareInputFiles(expected.files, workingInputs(cwd));
+  const workspace = mkdtempSync(join(options.tempRoot ?? tmpdir(), 'tamperward-artifact-'));
+  let complete = false;
+  try {
+    rmSync(join(cwd, 'dist'), { recursive: true, force: true });
+    run('npm', ['run', 'build', '--ignore-scripts'], { cwd });
+    compareInputFiles(expected.files, workingInputs(cwd));
+    const dist = Object.fromEntries(listFiles(cwd, 'dist').map(path => [path, readFileSync(join(cwd, path))]));
+    if (!dist['dist/cli/index.js']) throw new Error('build produced no CLI');
+    const packed = normalizePackResult(JSON.parse(run('npm', ['pack', '--ignore-scripts', '--json', '--pack-destination', workspace], { cwd })));
+    const artifact = join(workspace, packed.filename);
+    const bytes = readFileSync(artifact);
+    const consumer = join(workspace, 'consumer');
+    mkdirSync(consumer);
+    const lock = consumerLock(json(expected.files['package.json']), json(expected.files['package-lock.json']), artifact, bytes);
+    writeFileSync(join(consumer, 'package.json'), JSON.stringify(lock.packages['']));
+    writeFileSync(join(consumer, 'package-lock.json'), JSON.stringify(lock));
+    run('npm', ['ci', '--omit=dev', '--ignore-scripts', '--offline', '--no-audit', '--no-fund'], { cwd: consumer });
+    const installed = join(consumer, 'node_modules/tamperward');
+    verifyPackageTree(installed, expected.files, dist);
+    const bin = join(consumer, 'node_modules/.bin/tamperward');
+    if (realpathSync(bin) !== join(installed, 'dist/cli/index.js') || (lstatSync(realpathSync(bin)).mode & 0o111) === 0) throw new Error('installed CLI bin is not executable or resolves outside the package');
+    validateSchemas(installed, options.expectedVersion, cwd, run);
+    verifyCli(installed, join(workspace, 'fixture'), run);
+    compareInputFiles(expected.files, workingInputs(cwd));
+    if (hash(readFileSync(artifact)) !== hash(bytes)) throw new Error('release artifact changed during verification');
+    const receipt = {
+      schema_version: 1, commit: options.expectedCommit, version: options.expectedVersion,
+      inputs_sha256: inputDigest(expected.files), artifact, sha256: hash(bytes),
+    };
+    const receiptPath = join(workspace, 'receipt.json');
+    writeFileSync(receiptPath, JSON.stringify(receipt) + '\n');
+    rmSync(consumer, { recursive: true, force: true });
+    rmSync(join(workspace, 'fixture'), { recursive: true, force: true });
+    complete = true;
+    return receiptPath;
+  } finally {
+    if (!complete) rmSync(workspace, { recursive: true, force: true });
+  }
+}
+
+export function publishArtifact(cwd, receiptPath, options) {
+  const receipt = json(readFileSync(receiptPath));
+  if (receipt.schema_version !== 1 || receipt.commit !== options.expectedCommit || receipt.version !== options.expectedVersion || !isAbsolute(receipt.artifact) || dirname(receipt.artifact) !== dirname(resolve(receiptPath)) || !receipt.artifact.endsWith('.tgz') || !/^[0-9a-f]{64}$/.test(receipt.sha256) || !/^[0-9a-f]{64}$/.test(receipt.inputs_sha256)) throw new Error('verified artifact identity differs from release plan');
+  if (inputDigest(workingInputs(cwd)) !== receipt.inputs_sha256) throw new Error('release inputs changed after artifact verification');
+  if (hash(readFileSync(receipt.artifact)) !== receipt.sha256) throw new Error('release artifact changed after verification');
+  const tag = semver.prerelease(receipt.version) ? 'next' : 'latest';
+  (options.run ?? runCommand)('npm', ['publish', receipt.artifact, '--ignore-scripts', '--provenance', '--access', 'public', '--tag', tag], { cwd });
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  try {
+    const options = { expectedCommit: process.env.EXPECTED_COMMIT, expectedVersion: process.env.EXPECTED_VERSION };
+    if (process.argv[2] === 'verify') {
+      const receiptPath = verifyArtifact(process.cwd(), options);
+      const receipt = json(readFileSync(receiptPath));
+      console.log(`verified release ${receipt.version} commit=${receipt.commit} inputs=${receipt.inputs_sha256} artifact=${receipt.sha256}`);
+      if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `receipt=${receiptPath}\n`);
+      else console.log(`receipt=${receiptPath}`);
+    } else if (process.argv[2] === 'publish' && process.env.ARTIFACT_RECEIPT) {
+      publishArtifact(process.cwd(), process.env.ARTIFACT_RECEIPT, options);
+    } else throw new Error('usage: release-artifact.mjs verify|publish with EXPECTED_COMMIT and EXPECTED_VERSION');
+  } catch (error) {
+    console.error(`release artifact verification failed: ${error.message}`);
+    process.exitCode = 1;
+  }
 }

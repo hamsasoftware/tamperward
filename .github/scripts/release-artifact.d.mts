@@ -8,6 +8,20 @@ export interface CommandOptions {
   input?: string;
 }
 export type CommandRunner = (command: string, args: string[], options: CommandOptions) => string;
+export interface ArtifactOptions {
+  expectedCommit: string;
+  expectedVersion: string;
+  run?: CommandRunner;
+  tempRoot?: string;
+}
+export interface ArtifactReceipt {
+  schema_version: 1;
+  commit: string;
+  version: string;
+  inputs_sha256: string;
+  artifact: string;
+  sha256: string;
+}
 export interface PackageManifest {
   name: string;
   version: string;
@@ -33,3 +47,5 @@ export function consumerLock(manifest: PackageManifest, lock: PackageLock, artif
 export function verifyPackageTree(root: string, inputs: InputFiles, dist: InputFiles): void;
 export function validateSchemas(root: string, version: string, cwd: string, run?: CommandRunner): void;
 export function verifyCli(root: string, fixture: string, run?: CommandRunner): void;
+export function verifyArtifact(cwd: string, options: ArtifactOptions): string;
+export function publishArtifact(cwd: string, receiptPath: string, options: ArtifactOptions): void;
