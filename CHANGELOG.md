@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.52.0] — 2026-11-01
+
+### Added
+
+- `check --format sarif` and `verify --format sarif` emit SARIF 2.1.0 with a published versioned rule vocabulary, effective severity, known source locations and explicit incomplete-analysis status. Existing verdicts and exit codes are retained (#794).
+- SARIF run properties retain the verdict and a fresh same-invocation receipt digest; absent signed-verdict evidence remains explicit. Document a pinned GitHub code-scanning upload step.
+
 ## [2.51.0] — 2026-11-01
 
 ### Added
