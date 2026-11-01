@@ -37,6 +37,17 @@ export function inputDigest(files) {
   return hash(JSON.stringify(Object.keys(files).sort().map(path => [path, hash(files[path])])));
 }
 
+export function inputModeDigest(modes) {
+  return hash(JSON.stringify(Object.keys(modes).sort().map(path => [path, modes[path]])));
+}
+
+export function compareInputModes(expected, actual) {
+  if (!isDeepStrictEqual(Object.keys(expected).sort(), Object.keys(actual).sort())) throw new Error('release input mode file set changed');
+  for (const path of Object.keys(expected)) {
+    if (!['100644', '100755'].includes(expected[path]) || expected[path] !== actual[path]) throw new Error(`release input mode changed: ${path}`);
+  }
+}
+
 function versionNormalized(path, bytes, version) {
   const value = json(bytes);
   value.version = version;
@@ -72,11 +83,20 @@ export function snapshotInputs(cwd, commit, run = runCommand) {
   if (!/^[0-9a-f]{40}$/i.test(commit)) throw new Error('expected release commit must be a full Git SHA');
   const resolved = run('git', ['rev-parse', '--verify', `${commit}^{commit}`], { cwd }).trim();
   if (resolved !== commit) throw new Error('release commit identity differs');
-  const paths = run('git', ['ls-tree', '-r', '--name-only', '-z', commit], { cwd }).split('\0').filter(inputPath);
+  const entries = run('git', ['ls-tree', '-r', '-z', commit], { cwd }).split('\0').filter(Boolean);
   const files = {};
-  for (const path of paths) files[path] = Buffer.from(run('git', ['show', `${commit}:${path}`], { cwd }));
+  const modes = {};
+  for (const entry of entries) {
+    const match = /^([0-9]+) ([^ ]+) ([a-f0-9]+)\t([\s\S]+)$/.exec(entry);
+    if (!match) throw new Error('malformed release Git tree entry');
+    const [, mode, type, , path] = match;
+    if (!inputPath(path)) continue;
+    if (type !== 'blob' || !['100644', '100755'].includes(mode)) throw new Error(`release input is not a regular file: ${path}`);
+    modes[path] = mode;
+    files[path] = Buffer.from(run('git', ['show', `${commit}:${path}`], { cwd }));
+  }
   if (!files['package.json'] || !files['package-lock.json']) throw new Error('release commit has no package manifests');
-  return { commit, files };
+  return { commit, files, modes };
 }
 
 export function reviewedPullRequest(value, commit, repository) {
@@ -99,10 +119,11 @@ function verifyReviewedInputs(cwd, options, release, run) {
   if (fetched !== reviewed.head) throw new Error('reviewed pull request head changed during release verification');
   const source = snapshotInputs(cwd, reviewed.head, run);
   compareInputFiles(source.files, release.files, { version: options.expectedVersion, allowVersionOnly: true });
+  compareInputModes(source.modes, release.modes);
   return reviewed;
 }
 
-export function workingInputs(cwd) {
+function workingInputPaths(cwd) {
   const paths = [];
   for (const directory of INPUT_DIRECTORIES) paths.push(...listFiles(cwd, directory));
   for (const entry of readdirSync(cwd, { withFileTypes: true })) {
@@ -116,9 +137,21 @@ export function workingInputs(cwd) {
       if (error.code !== 'ENOENT') throw error;
     }
   }
-  return Object.fromEntries([...new Set(paths)].sort().map(path => {
+  return [...new Set(paths)].sort();
+}
+
+export function workingInputs(cwd) {
+  return Object.fromEntries(workingInputPaths(cwd).map(path => {
     if (!lstatSync(join(cwd, path)).isFile()) throw new Error(`release input is not a regular file: ${path}`);
     return [path, readFileSync(join(cwd, path))];
+  }));
+}
+
+export function workingInputModes(cwd) {
+  return Object.fromEntries(workingInputPaths(cwd).map(path => {
+    const entry = lstatSync(join(cwd, path));
+    if (!entry.isFile()) throw new Error(`release input is not a regular file: ${path}`);
+    return [path, entry.mode & 0o100 ? '100755' : '100644'];
   }));
 }
 
@@ -199,6 +232,7 @@ export function verifyArtifact(cwd, options) {
   const expected = snapshotInputs(cwd, options.expectedCommit, run);
   assertVersion(expected.files, options.expectedVersion);
   compareInputFiles(expected.files, workingInputs(cwd));
+  compareInputModes(expected.modes, workingInputModes(cwd));
   const reviewed = options.repository ? verifyReviewedInputs(cwd, options, expected, run) : undefined;
   const workspace = mkdtempSync(join(options.tempRoot ?? tmpdir(), 'tamperward-artifact-'));
   let complete = false;
@@ -206,6 +240,7 @@ export function verifyArtifact(cwd, options) {
     rmSync(join(cwd, 'dist'), { recursive: true, force: true });
     run('npm', ['run', 'build', '--ignore-scripts'], { cwd });
     compareInputFiles(expected.files, workingInputs(cwd));
+    compareInputModes(expected.modes, workingInputModes(cwd));
     const dist = Object.fromEntries(listFiles(cwd, 'dist').map(path => [path, readFileSync(join(cwd, path))]));
     if (!dist['dist/cli/index.js']) throw new Error('build produced no CLI');
     const packed = normalizePackResult(JSON.parse(run('npm', ['pack', '--ignore-scripts', '--json', '--pack-destination', workspace], { cwd })));
@@ -224,10 +259,12 @@ export function verifyArtifact(cwd, options) {
     validateSchemas(installed, options.expectedVersion, cwd, run);
     verifyCli(installed, join(workspace, 'fixture'), run);
     compareInputFiles(expected.files, workingInputs(cwd));
+    compareInputModes(expected.modes, workingInputModes(cwd));
     if (hash(readFileSync(artifact)) !== hash(bytes)) throw new Error('release artifact changed during verification');
     const receipt = {
       schema_version: 1, commit: options.expectedCommit, version: options.expectedVersion,
       inputs_sha256: inputDigest(expected.files), artifact, sha256: hash(bytes),
+      input_modes_sha256: inputModeDigest(expected.modes),
       ...(reviewed ? { repository: options.repository, reviewed_pr: reviewed } : {}),
     };
     const receiptPath = join(workspace, 'receipt.json');
@@ -243,8 +280,9 @@ export function verifyArtifact(cwd, options) {
 
 export function publishArtifact(cwd, receiptPath, options) {
   const receipt = json(readFileSync(receiptPath));
-  if (receipt.schema_version !== 1 || receipt.commit !== options.expectedCommit || receipt.version !== options.expectedVersion || !isAbsolute(receipt.artifact) || dirname(receipt.artifact) !== dirname(resolve(receiptPath)) || !receipt.artifact.endsWith('.tgz') || !/^[0-9a-f]{64}$/.test(receipt.sha256) || !/^[0-9a-f]{64}$/.test(receipt.inputs_sha256)) throw new Error('verified artifact identity differs from release plan');
+  if (receipt.schema_version !== 1 || receipt.commit !== options.expectedCommit || receipt.version !== options.expectedVersion || !isAbsolute(receipt.artifact) || dirname(receipt.artifact) !== dirname(resolve(receiptPath)) || !receipt.artifact.endsWith('.tgz') || !/^[0-9a-f]{64}$/.test(receipt.sha256) || !/^[0-9a-f]{64}$/.test(receipt.inputs_sha256) || !/^[0-9a-f]{64}$/.test(receipt.input_modes_sha256)) throw new Error('verified artifact identity differs from release plan');
   if (inputDigest(workingInputs(cwd)) !== receipt.inputs_sha256) throw new Error('release inputs changed after artifact verification');
+  if (inputModeDigest(workingInputModes(cwd)) !== receipt.input_modes_sha256) throw new Error('release input modes changed after artifact verification');
   if (options.repository && (receipt.repository !== options.repository || !Number.isSafeInteger(receipt.reviewed_pr?.number) || receipt.reviewed_pr.number <= 0 || !/^[a-f0-9]{40}$/.test(receipt.reviewed_pr?.head))) throw new Error('release receipt lacks reviewed pull request identity');
   if (hash(readFileSync(receipt.artifact)) !== receipt.sha256) throw new Error('release artifact changed after verification');
   const tag = semver.prerelease(receipt.version) ? 'next' : 'latest';
@@ -257,7 +295,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     if (process.argv[2] === 'verify') {
       const receiptPath = verifyArtifact(process.cwd(), options);
       const receipt = json(readFileSync(receiptPath));
-      console.log(`verified release ${receipt.version} commit=${receipt.commit} inputs=${receipt.inputs_sha256} artifact=${receipt.sha256}`);
+      console.log(`verified release ${receipt.version} commit=${receipt.commit} inputs=${receipt.inputs_sha256} modes=${receipt.input_modes_sha256} artifact=${receipt.sha256}`);
       if (receipt.reviewed_pr) console.log(`reviewed pull request ${receipt.repository}#${receipt.reviewed_pr.number} head=${receipt.reviewed_pr.head}`);
       if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `receipt=${receiptPath}\n`);
       else console.log(`receipt=${receiptPath}`);

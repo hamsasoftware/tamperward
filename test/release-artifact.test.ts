@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import {
   compareInputFiles, consumerLock, inputDigest, normalizePackResult, publishArtifact,
   snapshotInputs, validateSchemas, verifyArtifact, verifyCli, verifyPackageTree, workingInputs,
-  reviewedPullRequest,
+  reviewedPullRequest, compareInputModes, inputModeDigest, workingInputModes,
   type CommandRunner, type InputFiles,
 } from '../.github/scripts/release-artifact.mjs';
 
@@ -70,6 +70,54 @@ function fixture(): { cwd: string; commit: string } {
 }
 
 describe('release input identity (#804)', () => {
+  it('retains regular executable modes from the Git snapshot', () => {
+    const { cwd } = fixture();
+    execute('git', ['update-index', '--chmod=+x', 'src/cli/index.ts'], { cwd });
+    execute('git', ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'executable input'], { cwd });
+    const commit = execute('git', ['rev-parse', 'HEAD'], { cwd }).trim();
+    expect(snapshotInputs(cwd, commit)).toMatchObject({ modes: { 'src/cli/index.ts': '100755', 'package.json': '100644' } });
+  });
+
+  it('rejects a reviewed symlink even when a later regular input has identical blob bytes', () => {
+    const { cwd } = fixture();
+    const blob = execute('git', ['hash-object', '-w', '--stdin'], { cwd, input: 'true' }).trim();
+    execute('git', ['update-index', '--cacheinfo', '120000', blob, 'src/cli/index.ts'], { cwd });
+    execute('git', ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'reviewed link'], { cwd });
+    const reviewed = execute('git', ['rev-parse', 'HEAD'], { cwd }).trim();
+    execute('git', ['update-index', '--cacheinfo', '100644', blob, 'src/cli/index.ts'], { cwd });
+    execute('git', ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'regular release input'], { cwd });
+    const released = execute('git', ['rev-parse', 'HEAD'], { cwd }).trim();
+    expect(execute('git', ['show', `${reviewed}:src/cli/index.ts`], { cwd })).toBe(execute('git', ['show', `${released}:src/cli/index.ts`], { cwd }));
+    expect(() => snapshotInputs(cwd, reviewed)).toThrow(/not a regular file/);
+  });
+
+  it('rejects a Git submodule as a release input', () => {
+    const { cwd, commit } = fixture();
+    execute('git', ['update-index', '--add', '--cacheinfo', '160000', commit, 'src/submodule'], { cwd });
+    execute('git', ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'submodule input'], { cwd });
+    const head = execute('git', ['rev-parse', 'HEAD'], { cwd }).trim();
+    expect(() => snapshotInputs(cwd, head)).toThrow(/not a regular file/);
+  });
+
+  it('compares mode identities independently of bytes and binds names into their digest', () => {
+    const regular = { 'src/input.ts': '100644' } as const;
+    const executable = { 'src/input.ts': '100755' } as const;
+    expect(() => compareInputModes(regular, regular)).not.toThrow();
+    expect(() => compareInputModes(executable, executable)).not.toThrow();
+    expect(() => compareInputModes(regular, executable)).toThrow(/mode changed/);
+    expect(() => compareInputModes(regular, {})).toThrow(/file set/);
+    expect(inputModeDigest(regular)).not.toBe(inputModeDigest(executable));
+    expect(inputModeDigest(regular)).not.toBe(inputModeDigest({ 'src/other.ts': '100644' }));
+  });
+
+  it.skipIf(process.platform === 'win32')('rejects a working executable-mode change before building', () => {
+    const { cwd, commit } = fixture();
+    chmodSync(join(cwd, 'src/cli/index.ts'), 0o755);
+    expect(workingInputModes(cwd)['src/cli/index.ts']).toBe('100755');
+    expect(() => verifyArtifact(cwd, { expectedCommit: commit, expectedVersion: '1.0.0', run: execute })).toThrow(/mode changed/);
+    expect(existsSync(join(cwd, 'dist'))).toBe(false);
+  });
+
   it('selects the immutable reviewed head of the exact main merge', () => {
     const commit = 'a'.repeat(40), head = 'b'.repeat(40);
     const pull = { number: 42, merged_at: '2026-11-01T12:00:00Z', merge_commit_sha: commit,
@@ -217,6 +265,24 @@ describe('packed release contents (#804)', () => {
 });
 
 describe('release artifact lifecycle (#804)', () => {
+  it('rejects reviewed-to-release mode changes before building even with identical source bytes', () => {
+    const { cwd } = fixture();
+    execute('git', ['update-index', '--chmod=+x', 'src/cli/index.ts'], { cwd });
+    execute('git', ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'executable reviewed input'], { cwd });
+    const reviewed = execute('git', ['rev-parse', 'HEAD'], { cwd }).trim();
+    execute('git', ['update-index', '--chmod=-x', 'src/cli/index.ts'], { cwd });
+    execute('git', ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'nonexecutable release input'], { cwd });
+    const commit = execute('git', ['rev-parse', 'HEAD'], { cwd }).trim();
+    execute('git', ['remote', 'add', 'origin', cwd], { cwd });
+    execute('git', ['update-ref', 'refs/pull/42/head', reviewed], { cwd });
+    const run: CommandRunner = (command, args, options) => command === 'gh'
+      ? JSON.stringify([{ number: 42, merged_at: '2026-11-01T12:00:00Z', merge_commit_sha: commit,
+        head: { sha: reviewed }, base: { ref: 'main', repo: { full_name: 'hexrift/tamperward' } } }])
+      : execute(command, args, options);
+    expect(() => verifyArtifact(cwd, { expectedCommit: commit, expectedVersion: '1.0.0', repository: 'hexrift/tamperward', run })).toThrow(/mode changed/);
+    expect(existsSync(join(cwd, 'dist'))).toBe(false);
+  });
+
   it('binds a final package to the independently recorded merged PR head', () => {
     const { cwd, commit: reviewed } = fixture();
     writeFileSync(join(cwd, 'package.json'), JSON.stringify(manifest('1.0.1')));
@@ -248,6 +314,7 @@ describe('release artifact lifecycle (#804)', () => {
     };
     const receiptPath = verifyArtifact(cwd, { expectedCommit: commit, expectedVersion: '1.0.0', run, tempRoot: temporary() });
     const receipt = JSON.parse(readFileSync(receiptPath, 'utf8'));
+    expect(receipt.input_modes_sha256).toBe(inputModeDigest(snapshotInputs(cwd, commit).modes));
     expect(existsSync(receipt.artifact)).toBe(true);
     expect(commands.filter(([command, args]) => command === 'npm' && args[0] === 'pack')).toHaveLength(1);
     expect(commands.find(([command, args]) => command === 'npm' && args[0] === 'ci')?.[1]).toEqual(expect.arrayContaining(['--offline', '--ignore-scripts', '--omit=dev']));
@@ -262,6 +329,17 @@ describe('release artifact lifecycle (#804)', () => {
     const receiptPath = verifyArtifact(cwd, { expectedCommit: commit, expectedVersion: '1.0.0', run: execute, tempRoot: temporary() });
     const publish: CommandRunner = () => { throw new Error('unexpected publish'); };
     expect(() => publishArtifact(cwd, receiptPath, { expectedCommit: commit, expectedVersion: '1.0.1', run: publish })).toThrow(/identity/);
+    if (process.platform !== 'win32') {
+      const input = join(cwd, 'src/cli/index.ts'), mode = statSync(input).mode;
+      chmodSync(input, mode ^ 0o100);
+      expect(() => publishArtifact(cwd, receiptPath, { expectedCommit: commit, expectedVersion: '1.0.0', run: publish })).toThrow(/input modes changed/);
+      chmodSync(input, mode);
+    }
+    const receipt = JSON.parse(readFileSync(receiptPath, 'utf8'));
+    delete receipt.input_modes_sha256;
+    const missingModeReceipt = join(dirname(receiptPath), 'missing-modes.json');
+    writeFileSync(missingModeReceipt, JSON.stringify(receipt));
+    expect(() => publishArtifact(cwd, missingModeReceipt, { expectedCommit: commit, expectedVersion: '1.0.0', run: publish })).toThrow(/identity/);
     writeFileSync(join(cwd, 'src/cli/index.ts'), 'changed after verification');
     expect(() => publishArtifact(cwd, receiptPath, { expectedCommit: commit, expectedVersion: '1.0.0', run: execute })).toThrow(/inputs.*changed/i);
   }, 60_000);
