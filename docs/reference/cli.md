@@ -201,10 +201,13 @@ Postures: `READY`, `READY WITH WARNINGS`, `INCOMPLETE`, `BROKEN`. Set `GH_TOKEN`
 Doctor and onboard also show readiness for static checking, local verification,
 container verification, Linux run lifecycle and protected CI. In `doctor --json`,
 the additive `capabilities` array uses `AVAILABLE`, `BLOCKED` or `UNVERIFIED` and
-provides a next action for each. `UNVERIFIED` means doctor did not perform that
-command's authority preflight: a configured container image is not proof that
-Docker and its pinned image are available, and local CI wiring without `--github`
-does not certify branch protection. The global `authoritative` value keeps its
+provides a next action for each. For a configured container verifier, doctor performs
+the same bounded Docker client/daemon and local digest-pinned image checks that verify
+uses. This preflight reads metadata; it does not pull an image or start a container.
+Its named `container-preflight` check supplies the readiness evidence to doctor and
+onboard. `UNVERIFIED` means the relevant authority was not checked: local CI wiring
+without `--github`, for example, does not certify branch protection.
+The global `authoritative` value keeps its
 existing meaning: any BROKEN check leaves it false even when a narrower command
 such as static `check` remains usable. Each command still enforces its own
 preflight at execution time.

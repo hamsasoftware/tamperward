@@ -18,6 +18,7 @@ import { buildSync } from 'esbuild';
 import { runCheck } from '../src/cli/check';
 import { runVerify } from '../src/cli/verify';
 import { runDoctor } from '../src/cli/doctor';
+import * as verifierBackend from '../src/verifier-backend';
 import { runEnvelope, trustedLinuxPython } from '../src/cli/run';
 import { runInit } from '../src/cli/init';
 import { validateCliArgs } from '../src/cli/main';
@@ -452,7 +453,14 @@ describe('machine-readable schema v1 (#333)', () => {
   it('doctor v1 covers authoritative healthy/degraded posture, broken posture, and malformed policy', () => {
     if (process.platform === 'linux' && trustedLinuxPython().path) {
       const healthy = healthyDoctorRepo();
-      let r = capture(() => runDoctor({ cwd: healthy, json: true }));
+      const diagnoseHealthy = () => {
+        vi.spyOn(verifierBackend, 'prepareVerifierBackend').mockImplementation(verify => ({
+          kind: 'container', trust: 'isolated-container', available: true,
+          engine: 'docker', image: verify?.image,
+        }));
+        return runDoctor({ cwd: healthy, json: true });
+      };
+      let r = capture(diagnoseHealthy);
       expect(r.code).toBe(0);
       let doc = parseOnlyJson(r.out);
       expect(doc.authoritative).toBe(true);
@@ -460,7 +468,7 @@ describe('machine-readable schema v1 (#333)', () => {
       expect(validateDoc('doctor', doc)).toEqual([]);
 
       rmSync(defaultEventLog(healthy) + '.health.json', { force: true });
-      r = capture(() => runDoctor({ cwd: healthy, json: true }));
+      r = capture(diagnoseHealthy);
       expect(r.code).toBe(0);
       doc = parseOnlyJson(r.out);
       expect(doc.authoritative).toBe(true);

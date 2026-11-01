@@ -18,6 +18,10 @@ export function capabilityReadiness(input: CapabilityInputs): CapabilityReadines
   const broken = (...ids: string[]) => ids.some(id => state(id) === 'BROKEN');
   const policyBlocked = broken('policy', 'doctor', 'policy-floor');
   const configured = state('verifier') !== undefined && state('verifier') !== 'BROKEN';
+  const preflightCheck = state('container-preflight');
+  const containerPreflight = preflightCheck === 'OK' ? true
+    : preflightCheck === 'BROKEN' ? false
+    : preflightCheck === undefined ? input.containerPreflight : undefined;
   const staticCheck: CapabilityReadiness = policyBlocked
     ? { id: 'static-check', state: 'BLOCKED', next: 'Fix the policy or authority input named by doctor, then run `tamperward check --worktree`.' }
     : state('policy') === 'OK'
@@ -32,11 +36,11 @@ export function capabilityReadiness(input: CapabilityInputs): CapabilityReadines
       ? { id: 'local-verify', state: 'AVAILABLE', next: 'Run `tamperward verify --base <base>`; checkpointed-local retains its documented same-host residual.' }
       : { id: 'local-verify', state: 'UNVERIFIED', next: 'Configure and check a checkpointed-local verifier before relying on local verification.' };
 
-  const container: CapabilityReadiness = policyBlocked || broken('verifier') || input.containerPreflight === false
-    ? { id: 'container-verify', state: 'BLOCKED', next: 'Fix the verifier configuration, Docker authority or pinned image, then run `tamperward verify`.' }
-    : configured && input.verifierBackend === 'container' && input.containerPreflight === true
+  const container: CapabilityReadiness = policyBlocked || broken('verifier') || containerPreflight === false
+    ? { id: 'container-verify', state: 'BLOCKED', next: 'Fix the verifier configuration, Docker authority or pinned image, then rerun `tamperward doctor` before verification.' }
+    : configured && input.verifierBackend === 'container' && containerPreflight === true
       ? { id: 'container-verify', state: 'AVAILABLE', next: 'Run `tamperward verify`; recheck Docker and the pinned image for each verification.' }
-      : { id: 'container-verify', state: 'UNVERIFIED', next: 'Configure a digest-pinned image and run `tamperward verify` for the Docker authority preflight.' };
+      : { id: 'container-verify', state: 'UNVERIFIED', next: 'Configure a digest-pinned image and run `tamperward doctor` for a read-only Docker authority preflight.' };
 
   const lifecycle: CapabilityReadiness = input.platform !== 'linux' || state('platform') === 'BROKEN'
     ? { id: 'run-lifecycle', state: 'BLOCKED', next: 'Use a supported Linux host with trusted system Python for authoritative `tamperward run`.' }

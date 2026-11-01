@@ -50,6 +50,12 @@ describe('command-specific readiness from doctor evidence (#803)', () => {
     expect(states(replace(base(), 'workflow-permissions', 'BROKEN'), 'linux')['protected-ci']).toBe('BLOCKED');
     expect(states(replace(base(), 'policy', 'BROKEN'), 'linux')['static-check']).toBe('BLOCKED');
   });
+  it('keeps named doctor preflight evidence authoritative over a separate readiness hint', () => {
+    const checks = [...base(), { id: 'container-preflight', state: 'BROKEN' as const, detail: 'Docker unavailable' }];
+    expect(states(checks, 'linux', 'container', true)['container-verify']).toBe('BLOCKED');
+    checks[checks.length - 1] = { id: 'container-preflight', state: 'OK', detail: 'Docker and pinned image checked' };
+    expect(states(checks, 'linux', 'container')['container-verify']).toBe('AVAILABLE');
+  });
   it('keeps actionable command guidance on every state', () => {
     const values = capabilityReadiness({ checks: base(), platform: 'linux', verifierBackend: 'local' });
     expect(values.map(x => x.id)).toEqual(['static-check', 'local-verify', 'container-verify', 'run-lifecycle', 'protected-ci']);
