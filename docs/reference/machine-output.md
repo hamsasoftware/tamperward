@@ -29,17 +29,59 @@ identifiers.
 
 ## Choosing a format: `--format` / `--json`
 
-`check` renders in one of four formats; `--json` is an alias for `--format json`.
+`check` renders in one of five formats; `--json` is an alias for `--format json`.
 
 | format | where it goes |
 | --- | --- |
 | `text` | The terminal. Blocking findings first, then by file and line. Severity is always spelled out (`BLOCK` / `warn`), never carried by colour alone; honours `NO_COLOR` / `FORCE_COLOR`. |
 | `github` | One inline annotation per finding — on the line in *Files changed* — plus a job-summary table on the run page. The full text output still goes to the log. |
 | `json` | The versioned machine document (below). |
+| `sarif` | One SARIF 2.1.0 document on stdout, for code scanning and security dashboards. |
 | `auto` | `github` when `GITHUB_ACTIONS=true`, otherwise `text` — so CI wiring stays one line. |
 
-`--json` cannot be combined with `--format`. `verify`, `run`, `doctor`, `stats`,
-`status` and `research` accept `--json` and emit their own documents.
+`--json` cannot be combined with `--format`. `verify` also accepts `--format json`
+and `--format sarif`. `run`, `doctor`, `stats`, `status` and `research` accept
+`--json` and emit their own documents.
+
+## SARIF 2.1.0
+
+```bash
+tamperward check --diff "main...HEAD" --format sarif > check.sarif
+tamperward verify --base main --format sarif > verify.sarif
+```
+
+SARIF changes presentation only: blocking findings still exit 1; warnings alone exit 0;
+verification retains its 0/1/2 exits. Argument and check setup errors exit 2 with a
+diagnostic on stderr and no SARIF document. Verification's structured fail-closed paths
+emit a `CANNOT_VERIFY` SARIF run. Progress remains on stderr. Explicit SARIF never emits
+GitHub workflow annotations, terminal formatting or a job summary on stdout.
+
+The published vocabulary is [`schemas/sarif-rules-v1.json`](https://github.com/hexrift/tamperward/blob/main/schemas/sarif-rules-v1.json),
+mirrored by `SARIF_RULE_IDS_V1` and `SARIF_RULES_V1` in `src/sarif.ts`.
+IDs have the form `tamperward/v1/test-skip`; existing IDs retain their meaning within
+vocabulary version 1. Additions are compatible; changing an existing meaning requires a
+new vocabulary version. Every detector rule has help text and a default level. Each
+result uses the finding's effective policy severity: `block` becomes `error`, `warn`
+becomes `warning`. File paths are URI encoded; line regions appear only when known.
+Command findings and whole-suite verification outcomes have no invented source location.
+`invocations[].executionSuccessful` is false for incomplete analysis (`detector-error`,
+`hidden-drift`, `CANNOT_VERIFY` or `BUDGET_EXCEEDED`), independently of the process exit code.
+
+Run `properties` include `command`, `rule_vocabulary_version`, `verdict`,
+`receipt_digest` and `signed_verdict`. Check verdicts are `BLOCKED` when any blocking
+finding remains, otherwise `CLEAN`; warning results remain visible. Verify carries its
+original verdict and JSON evidence fields, including any out-of-band approval. An
+approved `MASKED_FAILURE` remains that verdict and appears as a warning, even at exit 0.
+
+`receipt_digest` is populated only when this same verification successfully stores a
+fresh VERIFIED receipt. It is `null` for check and all other outcomes; an older stored
+receipt is never attached. `signed_verdict` is `null`: these commands do not sign a
+verdict or create an attestation. A separately produced signed verdict must be retained
+and checked through the [attestation workflow](../guide/attestation.md); its existence
+is never inferred from a local file or an environment variable. These run properties
+are evidence references, not admission authority.
+
+See [Integrate](../integrate.md#upload-sarif-to-github-code-scanning) for an upload example.
 
 ## `check --json`
 

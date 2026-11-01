@@ -33,7 +33,7 @@ tamperward check --diff "main...HEAD"      # commit-range view (CI authority)
 | `--staged` | Judge the staged diff. The pre-commit surface. |
 | `--worktree` | Judge working-tree changes (untracked protected files included). |
 | `--diff <base>...<head>` | Judge a commit range. The CI authority; reads policy from the base. |
-| `--format <fmt>` | `text` · `json` · `github` · `auto` (default). See [Machine output](./machine-output.md). |
+| `--format <fmt>` | `text` · `json` · `github` · `sarif` · `auto` (default). See [Machine output](./machine-output.md). |
 | `--json` | Alias for `--format json`. Cannot be combined with `--format`. |
 | `--cwd <dir>` | Run as if from `<dir>`; the repository root is still used. |
 
@@ -73,6 +73,7 @@ tamperward verify --base main
 | `--cmd <command>` | Override the suite command for this run. |
 | `--budget <seconds>` | Per-stage time budget (positive number). |
 | `--json` | Emit one versioned `verify` verdict document; never falls back to prose. |
+| `--format <fmt>` | `json` or `sarif`. Cannot be combined with `--json`. SARIF preserves the verification verdict and exit code. |
 | `--keep` | Keep the two materialised copies and report their paths. |
 | `--cargo-target-root <dir>` | Opt-in local-backend Cargo output cache outside the checkout. Sets distinct `<dir>/visible` and `<dir>/pristine` targets; never copies visible build output into pristine. Refused for isolated-container. |
 | `--require-ancestor` | Refuse a `--base` that is not an ancestor of `HEAD` (fail closed rather than silently anchoring older). |
