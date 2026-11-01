@@ -15,7 +15,7 @@ const hash = (bytes, algorithm = 'sha256', encoding = 'hex') => createHash(algor
 const json = bytes => JSON.parse(bytes.toString('utf8'));
 
 function runCommand(command, args, options) {
-  return execFileSync(command, args, { ...options, encoding: 'utf8', timeout: 120_000, maxBuffer: 32 * 1024 * 1024 });
+  return execFileSync(command, args, { ...options, encoding: 'utf8', timeout: 120_000, killSignal: 'SIGKILL', maxBuffer: 32 * 1024 * 1024 });
 }
 
 function listFiles(root, prefix = '') {
