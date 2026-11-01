@@ -32,7 +32,7 @@
 // The hooks remain the fast path — they steer the agent in-session. This
 // envelope, or `check --diff` + `verify` in CI, is the boundary.
 
-import { execFileSync, spawn, spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { accessSync, constants as fsConstants, mkdtempSync, readdirSync, readFileSync, readlinkSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -40,7 +40,8 @@ import { dirname, join, resolve } from 'node:path';
 import { runCheck } from './check';
 import { runVerify } from './verify';
 import { loadPolicyAt } from '../policy-load';
-import { objectRewriteState, trustedGitEnv } from '../git/trusted';
+import { objectRewriteState } from '../git/trusted';
+import { readTrustedGit, trustedGitAncestor } from '../git/process';
 import { treeFingerprint } from '../fingerprint';
 import {
   attestDependencyEnvironment,
@@ -821,7 +822,7 @@ function finishObserverAdvisory(
 }
 
 function git(args: string[], cwd: string): string {
-  return execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 1 << 28, env: trustedGitEnv() });
+  return readTrustedGit(args, cwd);
 }
 
 /** Clock ticks since boot. FLOOR is load-bearing: /proc/uptime is fractional
@@ -976,7 +977,13 @@ export function runEnvelope(opts: RunEnvelopeOpts): number {
   // positives) or let real pre-staged weakening hide as "already there"
   // (false negatives). Refuse both unless the caller owns the risk.
   if (!opts.allowDirty) {
-    const dirty = git(['status', '--porcelain'], cwd).trim();
+    let dirty: string;
+    try {
+      dirty = git(['status', '--porcelain'], cwd).trim();
+    } catch (error) {
+      err(`tamperward run: ${error instanceof Error ? error.message : String(error)} — cannot establish the entry-time working tree.`);
+      return 2;
+    }
     if (dirty) {
       err('tamperward run: working tree is dirty before the agent starts — the envelope cannot');
       err('attribute changes. Commit or stash first, or pass --allow-dirty to own the risk.');
@@ -1163,9 +1170,18 @@ export function runEnvelope(opts: RunEnvelopeOpts): number {
     return 1;
   }
 
-  const head = git(['rev-parse', 'HEAD'], cwd).trim();
-  const isAncestor = spawnSync('git', ['merge-base', '--is-ancestor', base, head], { cwd, env: trustedGitEnv() });
-  if (isAncestor.status !== 0) {
+  let head: string;
+  let isAncestor: boolean;
+  try {
+    head = git(['rev-parse', 'HEAD'], cwd).trim();
+    isAncestor = trustedGitAncestor(base, head, cwd);
+  } catch (error) {
+    err(`tamperward run: ${error instanceof Error ? error.message : String(error)} — cannot adjudicate Git ancestry.`);
+    finishObserverAdvisory(observer, say);
+    emitRunJson('CANNOT_ADJUDICATE', 2, { reason: 'CHECK_DIFF_UNJUDGEABLE' });
+    return 2;
+  }
+  if (!isAncestor) {
     err(`tamperward run: HEAD ${head.slice(0, 10)} is not a descendant of the trusted base ${base.slice(0, 10)} —`);
     err('the agent rewrote history out from under the anchor. That is the finding.');
     say(`\ntamperward run — agent exit ${agentExit}; HISTORY_REWRITE → ENFORCEMENT_FAILED`);

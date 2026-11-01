@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.49.2] — 2026-11-01
+
+### Fixed
+
+- Bound the run envelope's Git subprocesses and terminate stalled reads (#800).
+  Unavailable ancestry evidence now yields CANNOT_ADJUDICATE rather than a
+  HISTORY_REWRITE finding; a genuine nonancestor retains the existing verdict.
+
 ## [2.49.1] — 2026-10-30
 
 ### Added

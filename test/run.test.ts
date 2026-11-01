@@ -66,6 +66,26 @@ const run = (cwd: string, argv: string[], extra: Partial<Parameters<typeof runEn
   runEnvelope({ cwd, cmd: CMD, budget: 30, argv, ...extra });
 
 describe('tamperward run — the enforcement envelope', () => {
+  it.skipIf(!rootless)('reports an unreadable post-agent commit as unavailable adjudication (#800)', () => {
+    const cwd = repo(true);
+    const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd, encoding: 'utf8' }).trim();
+    const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    try {
+      expect(run(cwd, sh('true'), {
+        json: true,
+        onBeforeAdjudication: () => rmSync(join(cwd, '.git', 'objects', head.slice(0, 2), head.slice(2))),
+      })).toBe(2);
+      expect(JSON.parse(stdout.mock.calls.map(call => String(call[0])).join(''))).toMatchObject({
+        verdict: 'CANNOT_ADJUDICATE', reason: 'CHECK_DIFF_UNJUDGEABLE', exit_code: 2, complete: false,
+      });
+      expect(stderr.mock.calls.map(call => String(call[0])).join('')).not.toContain('HISTORY_REWRITE');
+    } finally {
+      stdout.mockRestore();
+      stderr.mockRestore();
+    }
+  }, 20000);
+
   it('refuses unreadable Git metadata before starting the agent (#798)', () => {
     const cwd = repo(true);
     symlinkSync('/dev/zero', join(cwd, '.git', 'shallow'));
