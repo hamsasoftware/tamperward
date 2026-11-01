@@ -5,7 +5,7 @@
 > through — the agent loop, pre-commit, the run envelope, pristine verification,
 > and protected CI authority.
 
-**Implementation status:** TamperWard 2.49.x
+**Implementation status:** TamperWard 2.50.x
 
 **Current supported surface:** JavaScript/TypeScript · Python · Go · Rust · Ruby ·
 JVM · PHP · .NET test/skip/suppression/config patterns; Claude Code hook + Stop
