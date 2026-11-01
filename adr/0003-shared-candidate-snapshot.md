@@ -57,7 +57,50 @@ that every read already shares one safe primitive.
 | `cli/oracle` manifest and copy checks | `inspectPath` first enforces the disk cap, then a 256 KiB manifest limit and digest; `inspectRel` compares source/copy kind, mode and bytes | Its direct trusted Git commands currently have no timeout and a 256 MiB buffer | Preflight/snapshot/cleanup failure clears binding and produces `CANNOT_VERIFY`; shared materialization adds no new authority |
 | `cli/verify` base/overlay Git reads | Existing trusted Git helper: 256 MiB buffer; mode/content restoration remains command-owned | No timeout in that helper or ancestry `spawnSync` | Resolution/overlay failures retain existing fail-closed handling; this extraction does not consolidate these with the bounded run helper |
 | `git/process` / `cli/run` adjudication Git reads | Trusted UTF-8 subprocess, 256 MiB output cap, ignored stdin, captured stdout/stderr | 3 seconds with `SIGKILL` | Read failures throw. Ancestry returns false only for normal exit 1; timeout, signal, crash or another status throws. The preceding bounded-Git change owns this boundary |
+| `cli/run.trustedLinuxPython` | Fixed-path interpreter and ancestor metadata; interpreter must be a non-writable regular file; isolated stdlib probe has ignored output | Requested 5-second probe timeout; no separate metadata deadline | Failed probes try the next fixed candidate; no trusted interpreter or a root caller leaves Linux lifecycle ownership unavailable |
+| `cli/run.runAgentSupervised` launch | Trusted Linux Python or the portable Node supervisor; inherited agent stdio has no capture cap; frozen environment JSON uses mode 0600 | Optional agent budget plus a 15-second outer backstop with `SIGKILL`; no configured outer timeout when the budget is omitted | Abnormal supervisor completion rejects its result and returns unowned failure. Linux ownership requires descendant draining through `ECHILD`; the portable supervisor reports `lifecycleOwned: false` |
+| `cli/run` supervisor-result read | Raw UTF-8 `readFileSync` of same-UID-writable final JSON, without a regular-file guard or byte cap; only read after normal supervisor completion | No separate read deadline | Read/JSON-syntax failures return unowned failure; required exit/timedOut fields are checked before accepting a result, while parsed `null` can throw during field inspection. This raw read is not consolidated with `readStateFile` |
+| `cli/run` process observations | Uncapped kernel `/proc/uptime` and `/proc/<pid>/stat` reads; process/fd enumeration and cwd/exe/fd link targets have no per-read cap | No separate syscall or scan deadline; observer waits have caller-owned bounds | Uptime read failure returns infinity; observer ENOENT means exited while other errors retain PID-liveness fallback. Survivor enumeration failure returns no observations; individual races are skipped and restricted fd enumeration retains cwd/exe probes. These are best-effort observations, not a new ownership guarantee |
 | `suite-diagnostics` / `verifier-backend` execution | Existing supervisor capture, stage budget, bounded diagnostic tails, backend-owned identity and cleanup | Stage budget and supervisor drain deadlines remain authoritative | Timeout, crash, resource exhaustion or incomplete pipes cannot establish a clean completed stage |
+| `cli/doctor` pin and workflow checks | `readStateFile` regular-file checks and 64 MiB disk cap; missing input remains distinct from refused input | No separate filesystem deadline | #812 makes unreadable pins/workflows broken checks; they do not silently become absent |
+| `cli/doctor` Git/API collection | Git probes retain Node's default output buffer and no deadline; GitHub API subprocess has a 15-second timeout and default buffer | As stated per transport | Git probe errors return `null`; API failures throw into broken/unknown posture. Pure GitHub evidence evaluation is transport-free |
+| `verification-state.interventionWiring` | Raw unbounded `readFileSync` of four local/user settings files, without a regular-file guard | No deadline | Parse/read errors become `present: false`; this remains a separate authority-sensitive follow-up, not a guarantee supplied by snapshot extraction |
+| `verification-state` Git and `git/build` reads | Trusted replace-disabled Git, 256 MiB buffers | No timeout in these existing helpers | Process errors propagate or are interpreted by the particular probe; they are not silently consolidated into the bounded run helper |
+
+## Reviewed I/O exceptions and reusable contracts
+
+`test/trust-io-architecture.test.ts` applies a TypeScript AST check only to
+`candidate-snapshot`, `git/trusted`, `git/process`, `github-authority` and
+`external-oracle`. Necessary raw I/O is admitted by a named exception matching the
+function owner, canonical imported API and exact static call count. Snapshot exceptions
+use the invariant names above. The Git exceptions are `GIT-METADATA-PATH` (the one-second
+path probe), `GIT-REWRITE-REFS` (three-second rewrite enumeration), `GIT-BOUNDED-READ`
+(three-second adjudication reads) and `GIT-ANCESTRY-RESULT` (normal exit-1 absence versus
+infrastructure failure). The evaluator/controller modules admit no raw filesystem or
+process I/O.
+
+The checker guards the selected `fs`, `fs/promises`, `child_process`, `process` and
+`module` families, including their `node:` spellings. It rejects unreviewed imports/calls,
+namespace or default imports, re-exports, raw module loaders, extracted imported aliases
+and process access other than environment inspection. Both `globalThis.process` and its
+computed spelling cannot supply an indirect process alias. Import aliases are resolved
+before visiting calls, including
+imports appearing later in a file. Added calls or calls moved to another owner require
+review; unused exceptions also fail. Worker program text and diagnostic strings are
+data rather than host calls, so an AST check does not mistake them for execution.
+It does not audit every Node API, network access or execution inside worker-program text.
+This finite source check is a review aid, not a whole-program security analyzer or a
+replacement for runtime contracts. Expanding its module list or exceptions requires
+updating the inventory and the relevant focused regression.
+
+`test/support/candidate-entry-contract.ts` supplies the same real Git-backed fixture
+and behavioral contract to `readStateFile` and shared materialization. It checks current
+live bytes, a replacement inode with equal size and restored timestamps, missing tracked
+inputs, and directory/FIFO/external-link replacements. Refusals must name the relevant
+shape rather than succeed through an unrelated error. The verification compatibility
+export is checked for function identity instead of duplicating this contract suite.
+The existing symlink-fidelity and external-oracle fixtures remain the independent
+integration checks for domain traversal, dependency links and completed evidence.
 
 ## Limits and consequences
 
