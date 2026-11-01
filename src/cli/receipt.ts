@@ -540,12 +540,6 @@ export function runReceiptReconcile(opts: ReceiptReconcileOpts = {}): number {
     if (annotation) process.stdout.write(`${annotation}\n`);
   }
 
-  // Keep --json stdout machine-readable; the generated CI workflow uses the human report.
-  if (!opts.json) {
-    const annotation = verifyWorkflowCommand(ci.verdict, exit);
-    if (annotation) process.stdout.write(`${annotation}\n`);
-  }
-
   // The exit code is CI's verdict, computed above BEFORE the receipt was read.
   return exit;
 }
