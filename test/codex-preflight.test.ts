@@ -7,7 +7,9 @@ import { join, resolve } from 'node:path';
 const dirs: string[] = [];
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 
-function fixture(versionCode = "console.log('codex-cli 0.0.1')") {
+type FixtureMode = 'normal' | 'mark' | 'stall';
+
+function fixture(mode: FixtureMode = 'normal') {
   const cwd = mkdtempSync(join(tmpdir(), 'tw-codex-preflight-'));
   dirs.push(cwd);
   const checkout = join(cwd, 'checkout');
@@ -20,17 +22,20 @@ function fixture(versionCode = "console.log('codex-cli 0.0.1')") {
   mkdirSync(modules);
   for (const name of ['esbuild', 'typescript', 'yaml', 'picomatch']) symlinkSync(resolve(__dirname, '../node_modules', name), join(modules, name), 'dir');
   const marker = join(cwd, 'runtime-executed');
+  const versionMarker = join(cwd, 'version-executed');
+  const metadataMarker = join(cwd, 'metadata-attempted');
   const executable = join(cwd, 'codex');
-  writeFileSync(executable, `#!${process.execPath}\nif(process.argv[2]==='--version'){${versionCode}}else require('node:fs').writeFileSync(${JSON.stringify(marker)},'unexpected');\n`);
+  copyFileSync(join(__dirname, 'support/codex-preflight-fixture.cjs'), executable);
   chmodSync(executable, 0o755);
   const run = (args: string[]) => spawnSync(process.execPath, [join(adapters, 'codex-probe.mjs'), ...args], {
     cwd: checkout, encoding: 'utf8', timeout: 20000, killSignal: 'SIGKILL',
     env: {
       ...process.env, CODEX_BIN: executable, CODEX_VERSION_EXPECTED: '0.0.2', CODEX_MODEL: 'qualification-model-pin',
       CODEX_EXEC_ARGS: 'exec --dangerously-bypass-approvals-and-sandbox', CODEX_KEEP_PROBE_ARTIFACTS: '0',
+      TW_CODEX_PREFLIGHT_FIXTURE_MODE: mode,
     },
   });
-  return { cwd, checkout, marker, run };
+  return { cwd, checkout, marker, versionMarker, metadataMarker, run };
 }
 
 describe('Codex qualification preflight (#785)', () => {
@@ -56,32 +61,24 @@ describe('Codex qualification preflight (#785)', () => {
   }, 30000);
 
   it.skipIf(process.platform === 'win32').each([{ args: ['--unknown'] }, { args: ['--preflight', '--preflight'] }])('rejects unsupported argument lists $args before invoking Codex', ({ args }) => {
-    const versionMarker = join(tmpdir(), `tw-version-${process.pid}-${Math.random().toString(36).slice(2)}`);
-    const { marker, run } = fixture(`require('node:fs').writeFileSync(${JSON.stringify(versionMarker)}, 'unexpected')`);
-    try {
-      const result = run(args);
-      expect(result.status).toBe(2);
-      expect(result.stderr).toContain('usage: codex-probe.mjs [--preflight]');
-      expect(existsSync(versionMarker)).toBe(false);
-      expect(existsSync(marker)).toBe(false);
-    } finally {
-      rmSync(versionMarker, { force: true });
-    }
+    const { marker, versionMarker, metadataMarker, run } = fixture('mark');
+    const result = run(args);
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain('usage: codex-probe.mjs [--preflight]');
+    expect(existsSync(metadataMarker)).toBe(false);
+    expect(existsSync(versionMarker)).toBe(false);
+    expect(existsSync(marker)).toBe(false);
   }, 30000);
 
   it.skipIf(process.platform === 'win32')('bounds the metadata version check without executing a qualification case', () => {
-    const versionMarker = join(tmpdir(), `tw-version-${process.pid}-${Math.random().toString(36).slice(2)}`);
-    const { marker, run } = fixture(`process.on('SIGTERM',()=>{});setTimeout(()=>{require('node:fs').writeFileSync(${JSON.stringify(versionMarker)},'late');console.log('codex-cli 0.0.1')},10000)`);
-    try {
-      const result = run(['--preflight']);
-      expect(result.error).toBeUndefined();
-      expect(result.status).toBe(1);
-      expect(result.stdout).toContain('codex_version: (unknown)');
-      expect(result.stdout).toContain('PREFLIGHT: INSUFFICIENT');
-      expect(existsSync(versionMarker)).toBe(false);
-      expect(existsSync(marker)).toBe(false);
-    } finally {
-      rmSync(versionMarker, { force: true });
-    }
+    const { marker, versionMarker, metadataMarker, run } = fixture('stall');
+    const result = run(['--preflight']);
+    expect(result.error).toBeUndefined();
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('codex_version: (unknown)');
+    expect(result.stdout).toContain('PREFLIGHT: INSUFFICIENT');
+    expect(existsSync(metadataMarker)).toBe(true);
+    expect(existsSync(versionMarker)).toBe(false);
+    expect(existsSync(marker)).toBe(false);
   }, 30000);
 });
