@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.49.4] — 2026-11-01
+
+### Fixed
+
+- Emit each receipt reconciliation workflow annotation once, preserving order and verdict.
+
 ## [2.49.3] — 2026-11-01
 
 ### Changed
