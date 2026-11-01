@@ -533,7 +533,9 @@ tamperward watch --dir . --log .git/tamperward/fsevents.jsonl
 
 ### `stats`
 
-Aggregate the privacy-safe hook/sweep audit events by rule and enforcement surface.
+Aggregate privacy-safe hook/sweep findings by rule and enforcement surface, and include
+completed timings from the matching `.measurements` sidecar. Sidecar invocations and
+incomplete samples are counted separately; they do not increase finding/session counts.
 
 ```bash
 tamperward stats --since 30d --json
@@ -548,11 +550,38 @@ tamperward stats --since 30d --json
 
 The log is read only as a regular file: a link wherever it points, a FIFO, a directory or
 any other entry standing at the path is refused by name with one line and exit 2, never
-followed, waited on or summarised. Nothing at the default path is the empty summary, and
-nothing at an explicit `--file` is `audit file not found`.
+followed, waited on or summarised. If neither the log nor its sidecar exists, the default
+path gives an empty summary and an explicit `--file` gives `audit file not found`.
 
 A finding is an integrity signal, not proof of intent. See
 [Audit history & stats](../guide/audit.md).
+
+### `measure-suite`
+
+Explicitly time the bare suite in the **live checkout**, without verification or
+materialization. This executes the supplied command, may create normal suite outputs,
+and grants no verification or sign-off authority. Supported POSIX hosts are required.
+
+```bash
+TAMPERWARD_AUDIT_LOG=auto tamperward measure-suite --cmd 'npm test' --budget 300
+```
+
+| flag | meaning |
+| --- | --- |
+| `--cmd <command>` | Required suite command; use the same command as the verification sample. |
+| `--budget <seconds>` | Positive finite wall-clock budget (default `300`). |
+| `--cwd <dir>` | Repository directory. |
+
+Exit codes: **0** PASSED · **1** FAILED · **2** INCOMPLETE/cannot measure. A timeout,
+unfinished process, or changed candidate/head is incomplete. The command prints a timing
+summary; it has no `--json` flag. With audit enabled, it writes a `measurement-v1` record
+to `<audit-path>.measurements`; with audit off, it writes no sidecar. `stats` includes the
+sidecar automatically.
+
+Pair only matching non-missing comparison hashes and controlled dependency/cache/run-order
+conditions; unpaired timing percentiles do not measure verification overhead. See the
+[audit guide](../guide/audit.md#verification-and-bare-suite-measurements) for record fields,
+missing samples and the production-pilot protocol.
 
 ## Sign-off: `allow`
 
