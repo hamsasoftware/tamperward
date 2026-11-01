@@ -44,6 +44,7 @@ on:
 permissions:
   contents: write # create the tag + GitHub release after a successful publish
   id-token: write # mints the OIDC token npm exchanges for publish rights
+  pull-requests: read
 
 # One release at a time, and never cancel one mid-publish: a cancelled run could leave a
 # published version with no tag. Queued runs re-check the registry and no-op.
@@ -185,8 +186,8 @@ jobs:
             echo "bump_sha=${BUMP_SHA}"
           } >> "$GITHUB_OUTPUT"
 
-      # Install (which the forward-version guard below needs), typecheck, then publish.
-      # prepublishOnly builds dist/.
+      # Install (which the forward-version guard below needs), typecheck, then verify
+      # and publish one tarball without a publish-time rebuild.
       #
       # NO `npm test` HERE, deliberately (#420). Required PR CI ran the whole suite
       # on Node 20/22/24 against the pull request's synthetic merge tree. A squash
@@ -235,19 +236,27 @@ jobs:
       - if: steps.plan.outputs.publish == 'true'
         run: npm run typecheck
 
+      - name: Verify release artifact
+        id: artifact
+        if: steps.plan.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_REPOSITORY: ${{ github.repository }}
+          EXPECTED_COMMIT: ${{ github.sha }}
+          EXPECTED_VERSION: ${{ steps.plan.outputs.version }}
+        run: node .github/scripts/release-artifact.mjs verify
+
       # A prerelease must not become `latest`, or `npm install tamperward` starts handing
       # people a release candidate. Anything with a hyphen (1.1.0-rc.2) publishes under
       # the `next` dist-tag instead.
       - name: Publish
         if: steps.plan.outputs.publish == 'true'
-        run: |
-          set -euo pipefail
-          VERSION="${{ steps.plan.outputs.version }}"
-          case "$VERSION" in
-            *-*) echo "prerelease $VERSION -> dist-tag next"; TAG=next ;;
-            *)   echo "release $VERSION -> dist-tag latest";  TAG=latest ;;
-          esac
-          npm publish --provenance --access public --tag "$TAG"
+        env:
+          EXPECTED_REPOSITORY: ${{ github.repository }}
+          EXPECTED_COMMIT: ${{ github.sha }}
+          EXPECTED_VERSION: ${{ steps.plan.outputs.version }}
+          ARTIFACT_RECEIPT: ${{ steps.artifact.outputs.receipt }}
+        run: node .github/scripts/release-artifact.mjs publish
 
       # The tag is the RECORD, cut only after the registry accepted the publish — either
       # in this run (the Publish step above succeeded, or the job would have stopped) or
@@ -277,10 +286,10 @@ jobs:
           VERSION: ${{ steps.plan.outputs.version }}
         run: |
           set -euo pipefail
-          for file in schemas/*-v1.schema.json; do
-            name="$(basename "$file" -v1.schema.json)"
+          for file in schemas/*.schema.json; do
+            name="$(basename "$file" .schema.json)"
             id="$(node -e 'const fs=require("fs"); const s=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(s["$id"] || "")' "$file")"
-            pattern="^https://raw\.githubusercontent\.com/hexrift/tamperward/(v[0-9]+\.[0-9]+\.[0-9]+)/schemas/${name}-v1\.schema\.json$"
+            pattern="^https://raw\.githubusercontent\.com/hexrift/tamperward/(v[0-9]+\.[0-9]+\.[0-9]+)/schemas/${name}\.schema\.json$"
             [[ "$id" =~ $pattern ]] || { echo "canonical id malformed in $file: $id"; exit 1; }
             ref="${BASH_REMATCH[1]}"
             if [ "$ref" != "v${VERSION}" ]; then

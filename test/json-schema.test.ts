@@ -7,6 +7,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
   symlinkSync,
@@ -52,10 +53,7 @@ import {
 const ROOT = resolve(__dirname, '..');
 const dirs: string[] = [];
 const SCHEMA_NAMES = ['check', 'verify', 'run', 'doctor', 'research', 'audit', 'stats', 'status', 'runtime-qualification', 'receipt', 'reconcile'] as const;
-const PUBLISHED_SCHEMA_FILES = [
-  ...SCHEMA_NAMES.map((name) => name + '-v1.schema.json'),
-  'research-stdio-v1.schema.json',
-] as const;
+const PUBLISHED_SCHEMA_FILES = readdirSync(join(ROOT, 'schemas')).filter(name => name.endsWith('.schema.json')).sort();
 const PACKAGE_VERSION: string = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version;
 const CANONICAL_ID_RE = /^https:\/\/raw\.githubusercontent\.com\/hexrift\/tamperward\/(v\d+\.\d+\.\d+)\/schemas\/([^/]+)$/;
 
@@ -336,7 +334,7 @@ describe('machine-readable schema v1 (#333)', () => {
     ).toBe(false);
   });
 
-  it('every published v1 schema $id is the release-tag URL of the release that first shipped its bytes (#662)', () => {
+  it('every published schema $id is the release-tag URL of the release that first shipped its bytes (#662)', () => {
     const validator = ajv();
     for (const filename of PUBLISHED_SCHEMA_FILES) {
       const bytes = readFileSync(join(ROOT, 'schemas', filename));
