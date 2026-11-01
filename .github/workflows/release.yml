@@ -188,16 +188,19 @@ jobs:
       # Install (which the forward-version guard below needs), typecheck, then publish.
       # prepublishOnly builds dist/.
       #
-      # NO `npm test` HERE, deliberately (#420). The exact-head PR CI (ci.yml, required
-      # on every merge to main) already ran the whole suite on Node 20/22/24 for this
-      # very commit; a second run on the release runner adds no evidence about the code
-      # and adds one more place for a timing-sensitive test to fail. That is how 2.23.0
+      # NO `npm test` HERE, deliberately (#420). Required PR CI ran the whole suite
+      # on Node 20/22/24 against the pull request's synthetic merge tree. A squash
+      # merge creates a different commit SHA; neither CI nor this release job reruns
+      # that suite on the final release SHA. A second run on the release runner
+      # would add another timing-sensitive failure point. That is how 2.23.0
       # sat unpublished: the perf-smoke (then test/perf-smoke.test.ts, now
       # harness/perf/smoke.test.ts in its own ci.yml job) measures a throughput ratio,
       # and the release runner's ratio missed the bar the PR runner had cleared. A test that
-      # passed on the reviewed head and fails on the release runner tells us about the
-      # runner, not the release — and the bump-commit check in `plan` is what guarantees
-      # the head being published IS the reviewed head. The typecheck stays: it is
+      # passed on the tested PR merge tree and fails on the release runner can reflect
+      # runner differences. The bump-commit check in `plan` binds this release to
+      # the main commit that changed the package version; it does not prove the
+      # squash SHA or rebuilt npm tarball bytes equal the PR test artifact. The
+      # typecheck stays: it is
       # deterministic, cheap, and catches a broken toolchain before `npm publish` does.
       - if: steps.plan.outputs.publish == 'true'
         run: npm ci

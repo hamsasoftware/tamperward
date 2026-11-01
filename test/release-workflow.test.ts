@@ -94,7 +94,7 @@ describe('release.yml re-entrancy (#420)', () => {
 });
 
 describe('release.yml gate does not re-run the suite (#420)', () => {
-  it('has no npm test / vitest step: exact-head PR CI is the authority', () => {
+  it('has no npm test / vitest step: required PR CI tests the synthetic merge tree', () => {
     const { steps } = load();
     const offenders = steps.filter(
       (s) => s.run !== undefined && /\bnpm (run )?test\b|\bvitest\b/.test(s.run),
@@ -105,7 +105,9 @@ describe('release.yml gate does not re-run the suite (#420)', () => {
   it('documents why the suite is not re-run', () => {
     const text = readFileSync(WF, 'utf8');
     expect(text).toMatch(/perf-smoke/);
-    expect(text).toMatch(/exact-head/);
+    expect(text).toMatch(/synthetic merge tree/);
+    expect(text).toMatch(/squash\s*\n\s*# merge creates a different commit SHA/i);
+    expect(text).toMatch(/does not prove[\s\S]*npm tarball bytes equal the PR test artifact/);
   });
 });
 
