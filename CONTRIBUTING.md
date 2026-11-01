@@ -149,7 +149,10 @@ changed the version in `package.json` (a dependency or script edit to the file d
 count) — a retry after an unrelated merge must not ship code the changelog entry never
 described. To publish such a head deliberately, dispatch the
 workflow with `allow_non_bump_head: true`; the run log prints both SHAs. The gate does
-not re-run the test suite: the exact-head PR CI on the merged commit is the authority.
+not re-run the full test suite. Required PR checks exercise GitHub's synthetic merge
+tree; a squash merge has a new commit identity. The bump guard identifies the permitted
+version-changing main commit and does not establish equality with the earlier PR
+artifact.
 
 Every release with a behaviour change gets a `CHANGELOG.md` entry naming what it closes.
 Security advisories reference versions, so "which release fixed that bypass" must be
