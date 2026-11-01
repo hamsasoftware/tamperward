@@ -138,7 +138,7 @@ function parseCheck(args: string[]): CheckOpts {
   return o;
 }
 
-type ValueRule = 'string' | 'positive' | 'positive-integer' | 'non-negative' | 'format' | 'mode';
+type ValueRule = 'string' | 'positive' | 'positive-integer' | 'non-negative' | 'format' | 'verify-format' | 'mode';
 
 function splitLongOptionEquals(args: string[]): string[] {
   const out: string[] = [];
@@ -233,6 +233,8 @@ function validateFlatArgs(args: string[], grammar: CliGrammar): ValidatedArgs {
         if (!Number.isFinite(n) || n < 0) {
           return { error: `${a} needs a non-negative number (got "${v}")`, seen, positionals };
         }
+      } else if (rule === 'verify-format' && v !== 'json' && v !== 'sarif') {
+        return { error: `--format needs one of json | sarif (got "${v}")`, seen, positionals };
       } else if (rule === 'format' && !isFormat(v)) {
         return {
           error: `--format needs one of ${FORMATS.join(' | ')} (got "${v}")`,
@@ -402,7 +404,7 @@ export function validateCliArgs(cmd: string, args: string[]): string | undefined
   }
 
   if (cmd === 'verify') {
-    return validateFlatArgs(args, {
+    const parsed = validateFlatArgs(args, {
       flags: ['--json', '--keep', '--require-ancestor'],
       values: {
         '--base': 'string',
@@ -410,8 +412,12 @@ export function validateCliArgs(cmd: string, args: string[]): string | undefined
         '--cwd': 'string',
         '--cargo-target-root': 'string',
         '--budget': 'positive',
+        '--format': 'verify-format',
       },
-    }).error;
+    });
+    if (parsed.error) return parsed.error;
+    if (parsed.seen.has('--json') && parsed.seen.has('--format')) return '--json cannot be combined with --format';
+    return undefined;
   }
 
   if (cmd === 'trace-verify') {
@@ -557,7 +563,7 @@ Usage:
   tamperward check --worktree               check working-tree changes (stop sweep)
   tamperward check --diff <base>...<head>   check a commit range (CI authority)
   tamperward check ... --json               machine-readable output (alias for --format json)
-  tamperward check ... --format <fmt>       text | json | github | auto (default)
+  tamperward check ... --format <fmt>       text | json | github | sarif | auto (default)
 
 Formats:
   text    grouped, wrapped, colour-optional terminal output. Severity is always
@@ -569,6 +575,7 @@ Formats:
   json    versioned machine-readable output. Top-level schema_version identifies
           the public JSON-schema major; published schemas live under schemas/.
   auto    github when GITHUB_ACTIONS=true, otherwise text.
+  sarif   SARIF 2.1.0 for security dashboards and code scanning.
   tamperward hook claude                    PreToolUse gate (reads hook JSON on stdin)
   tamperward sweep claude                   Stop sweep (re-scan the turn's working tree)
   tamperward hook-service start [--dir D]   OPT-IN persistent hook service: one warm
@@ -590,6 +597,7 @@ Formats:
                                             trusted revision
   tamperward verify [--base R] [--cmd C]    pristine-suite re-execution: run the suite
              [--budget S] [--json] [--keep] as-is AND with protected files restored
+             [--format json|sarif]         emit machine JSON or SARIF 2.1.0
              [--require-ancestor] [--cwd D]  from the trusted base; a visible-green /
                                             pristine-red result is a MASKED FAILURE
                                             (exit 1, or 0 under a compact tw1:<digest>

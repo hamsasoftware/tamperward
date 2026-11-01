@@ -5,7 +5,7 @@
 > through — the agent loop, pre-commit, the run envelope, pristine verification,
 > and protected CI authority.
 
-**Implementation status:** TamperWard 2.51.x
+**Implementation status:** TamperWard 2.52.x
 
 **Current supported surface:** JavaScript/TypeScript · Python · Go · Rust · Ruby ·
 JVM · PHP · .NET test/skip/suppression/config patterns; Claude Code hook + Stop
@@ -641,9 +641,14 @@ the audience gets does change, because a verdict nobody reads gates nothing:
   so terminals linkify it.
 - **GitHub Actions** (auto-selected on `GITHUB_ACTIONS=true`) — a workflow annotation per
   finding, which GitHub places inline on the diff in *Files changed*, plus a job-summary
-  table on the run page. Annotations were chosen over SARIF deliberately: they need no
-  `security-events: write` and no Advanced Security, so they work on every repo. The text
-  output still goes to the log unchanged.
+  table on the run page. Annotations remain the automatic choice: they need no
+  `security-events: write` and no code-scanning configuration. The text output still
+  goes to the log unchanged.
+- **SARIF** — explicit `check --format sarif` and `verify --format sarif` emit SARIF 2.1.0
+  with the published versioned rule vocabulary, effective severity, known locations,
+  actual verdict and fresh receipt reference. Incomplete analysis stays unsuccessful;
+  absent signed-verdict evidence stays explicit. Upload requires code-scanning setup
+  and permissions; presentation does not confer admission authority.
 - **JSON** — versioned public machine output for downstream tooling. The shipped
   Draft 2020-12 schema set covers `audit`, `check`, `doctor`, `research`, `run`,
   `stats` and `verify`, each at schema major 1 under `schemas/*-v1.schema.json`.
@@ -654,7 +659,7 @@ the audience gets does change, because a verdict nobody reads gates nothing:
   separately. The Claude hook JSON and advisory `trace-verify` evidence are separate
   protocols, not members of this verdict-schema family.
 
-Severity is carried by the word `BLOCK` / `warn` in every format. Colour, where it exists,
+Human-readable formats carry severity with the word `BLOCK` / `warn`. Colour, where it exists,
 is decoration over text that already says the same thing — so the verdict survives being
 piped, logged, read by a screen reader, or read by someone who cannot distinguish the
 colours. `NO_COLOR` and `FORCE_COLOR` are honoured.

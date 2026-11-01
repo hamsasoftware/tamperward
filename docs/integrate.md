@@ -97,6 +97,41 @@ out-of-band variables (`TAMPERWARD_OOB_SIGNOFF`, `TAMPERWARD_OOB_HEAD`) is on
 [Enforcement & sign-off](./guide/enforcement.md); the variables themselves are on
 [Environment variables](./guide/environment.md).
 
+## Upload SARIF to GitHub code scanning
+
+After checkout with full history and installation of your trusted, pinned Tamperward
+version, add these steps to the gate job. Grant that job `contents: read` and
+`security-events: write` permissions:
+
+```yaml
+permissions:
+  contents: read
+  security-events: write
+
+steps:
+  - name: Check integrity
+    id: integrity
+    run: tamperward check --diff "origin/main...HEAD" --format sarif > tamperward.sarif
+  - name: Upload integrity findings
+    if: ${{ !cancelled() && steps.integrity.outcome != 'skipped' }}
+    uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+    with:
+      sarif_file: tamperward.sarif
+      category: tamperward-check
+```
+
+The upload runs even when findings fail the check step; that step's failing status
+continues to gate the job. Setup or argument errors can leave no valid SARIF file and
+must be fixed before upload succeeds. This is an addition to enforcement, not a
+replacement for required checks. Code scanning must be enabled for the repository;
+fork pull requests can have read-only tokens that prevent uploads.
+
+For verification, use `tamperward verify --base origin/main --format sarif`, a separate
+output file, and `category: tamperward-verify`. Retain the receipt and signed attestation
+as separate evidence artifacts when your workflow produces them. The
+[SARIF contract](./reference/machine-output.md#sarif-2-1-0) describes verdict, severity and
+evidence-reference semantics.
+
 ## The local enforcement envelope
 
 On Linux, `tamperward run` wraps an agent invocation end to end — recording the trusted
