@@ -650,6 +650,10 @@ Formats:
                                             independent container-backed JSON function oracle
   tamperward attestation sign --payload F --key K --out F
                                             sign a trusted CI verdict with an external Ed25519 key
+  tamperward attestation sign --schema-version 2 --payload F --evidence F
+             --sha256 H --key K --out F      sign completed suite evidence for admission
+  tamperward attestation admit --statement F --key K --expect F
+                                            require exact suite assurance and request scope
   tamperward attestation verify --statement F --key K --expect F
                                             require a trusted public key and exact fresh binding
   tamperward allow <rule> --reason "..."    record a human sign-off (local audit ledger)
