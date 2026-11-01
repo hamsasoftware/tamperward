@@ -21,9 +21,10 @@ afterEach(() => {
 });
 
 function fixture(backend: 'local' | 'container' = 'local'): string {
-  const cwd = mkdtempSync(join(tmpdir(), 'tw-host-capability-'));
-  dirs.push(cwd);
-  execFileSync('git', ['init', '-q'], { cwd });
+  const directory = mkdtempSync(join(tmpdir(), 'tw-host-capability-'));
+  dirs.push(directory);
+  execFileSync('git', ['init', '-q'], { cwd: directory });
+  const cwd = execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: directory, encoding: 'utf8' }).trim();
   execFileSync('git', ['config', 'user.name', 'Fixture'], { cwd });
   execFileSync('git', ['config', 'user.email', 'fixture@example.invalid'], { cwd });
   writeFileSync(join(cwd, '.tamperward.yml'), [
@@ -79,7 +80,11 @@ describe('doctor capability contract on the current host (#803)', () => {
     expect(byId['container-verify'].state).toBe('UNVERIFIED');
     expect(byId['protected-ci'].state).toBe('UNVERIFIED');
     expect(document.authoritative).toBe(!document.checks.some(check => check.state === 'BROKEN'));
-    expect(document.capabilities.every(capability => capability.next.includes('`'))).toBe(true);
+    expect(byId['static-check'].next).toContain('tamperward check');
+    expect(byId['local-verify'].next).toContain(process.platform === 'win32' ? 'POSIX /bin/sh' : 'tamperward verify');
+    expect(byId['run-lifecycle'].next).toContain('tamperward run');
+    expect(byId['container-verify'].next).toContain('tamperward doctor');
+    expect(byId['protected-ci'].next).toContain('tamperward doctor --github');
     process.stdout.write('doctor capability readiness: ' + JSON.stringify({
       host: process.platform, authoritative: document.authoritative, capabilities: document.capabilities,
     }) + '\n');
