@@ -13,8 +13,16 @@ import { machineOutput, type MachineSchemaVersion } from '../machine-output';
 import { execFailure, isRecord } from '../narrow';
 import { repoRoot } from '../repo-context';
 import { colourEnabled } from './render/text';
-import { evaluateGitHubProtection, REPOSITORY_REQUIRED_CHECKS } from '../github-authority';
-export { evaluateGitHubProtection, REPOSITORY_REQUIRED_CHECKS } from '../github-authority';
+import {
+  evaluateGitHubProtection,
+  REPOSITORY_REQUIRED_CHECKS,
+  REPOSITORY_REQUIRED_CHECK_INTEGRATION_ID,
+} from '../github-authority';
+export {
+  evaluateGitHubProtection,
+  REPOSITORY_REQUIRED_CHECKS,
+  REPOSITORY_REQUIRED_CHECK_INTEGRATION_ID,
+} from '../github-authority';
 export type { GitHubProtectionSnapshot } from '../github-authority';
 import { readStateFile } from '../disk';
 import { paint, severityColour, BOLD, type Severity } from './render/status';
@@ -541,6 +549,9 @@ export function githubAuthority(
     (repo.toLowerCase() === 'hexrift/tamperward' && !opts.requiredChecks)
     ? REPOSITORY_REQUIRED_CHECKS
     : opts.requiredChecks ?? ['tamperward'];
+  const expectedIntegrationId = repo.toLowerCase() === 'hexrift/tamperward'
+    ? REPOSITORY_REQUIRED_CHECK_INTEGRATION_ID
+    : undefined;
   if (requiredChecks.length === 0 || requiredChecks.some(check => !check.trim())) {
     throw new Error('required status checks must be nonempty');
   }
@@ -606,6 +617,7 @@ export function githubAuthority(
       { rules, bypassActors, branchProtection },
       'tamperward',
       requiredChecks,
+      expectedIntegrationId,
     ),
     ...inspectionFindings,
   ];
