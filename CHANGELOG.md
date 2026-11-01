@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.51.0] — 2026-11-01
+
+### Added
+
+- Add opt-in v2 suite-evidence signing and an executable admission consumer (#801).
+  Bind the protected producer artifact, repository, candidate, baseline, policy,
+  verifier, suite assurance, explicit exception and fresh request scope to a
+  trusted Ed25519 signer without changing default v1 statements.
+
 ## [2.50.0] — 2026-11-01
 
 ### Added

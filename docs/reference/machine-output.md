@@ -238,3 +238,9 @@ verification and does not authenticate an unsigned producer. `receipt-v1` and
 `reconcile-v1` add `oracle_assurance` with the same `suite-exit-only` report and
 residual as `verify-v1`; older receipts remain readable. The receipt's existing
 evidence digest retains its original identity/stage encoding.
+
+[`signed-verdict-v2`](https://raw.githubusercontent.com/hexrift/tamperward/v2.51.0/schemas/signed-verdict-v2.schema.json) is an opt-in
+completed suite admission statement. It signs the protected-producer evidence
+SHA-256, stage summary, exact candidate/policy/verifier identity, assurance,
+exception and request scope. Only `suite-exit-only` admission is supported. See the
+[producer and consumer contract](../guide/admission-consumer.md#opt-in-v2-producer-and-executable-consumer).

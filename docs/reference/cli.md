@@ -656,3 +656,19 @@ explicit stale-lock recovery. Active or unreadable locks fail closed. Flags and 
 - [Policy reference](./policy.md) — the full `.tamperward.yml` contract.
 - [Exit codes](./exit-codes.md) — the single table for `0` / `1` / `2` / `124`.
 - [Environment variables](../guide/environment.md) — every variable the gate reads.
+
+
+## Completed suite admission: `attestation admit`
+
+`attestation sign --schema-version 2 --payload F --evidence F --sha256 H --key K --out F`
+accepts a protected-producer completed `verify --json` report and its trusted SHA-256.
+It checks the actual candidate, policy, verifier, suite completion and explicit
+exception before signing a bounded v2 statement. `attestation admit --statement F
+--key K --expect F` requires a trusted Ed25519 public key and independently current
+request scope. Exit 0 admits the exact `VERIFIED` outcome or explicitly expected
+`MASKED_FAILURE` exception; exit 2 rejects incomplete, stale, mismatched or
+unsupported evidence. The supported assurance is only `suite-exit-only`, with
+candidate code executing inside the suite process. A fresh request nonce prevents
+cross-request replay; atomic one-use consumption belongs to the protected admission
+transaction. V1 signing and verification remain the default. See the
+[admission consumer contract](../guide/admission-consumer.md).

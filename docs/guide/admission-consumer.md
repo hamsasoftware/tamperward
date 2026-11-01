@@ -8,6 +8,7 @@
 | `receipt-v1` | Unsigned local `VERIFIED` identity and bounded stage results | Its digest detects inconsistency, not producer authenticity. It grants no admission authority. |
 | `signed-verdict-v1` | Trusted Ed25519 key signs revision, policy, verdict, audience, nonce and validity | No tree, verifier-configuration digest, completion, explicit exception or assurance binding. Preserve v1 consumers and bytes. |
 | `oracle-v1` / `oracle-v2` | Independent host completion and comparison of finite CommonJS JSON response cases | Separate unsigned evidence. Neither a suite result nor a signed suite statement proves this oracle ran. |
+| `signed-verdict-v2` and `attestation admit` | SHA-pinned completed verify evidence, exact producer identity, suite assurance, exception and request scope | Supported assurance is only `suite-exit-only`. The protected job must establish evidence provenance and the consumer must enforce fresh request scope. |
 
 ## Existing v1 consumer contract
 
@@ -96,3 +97,108 @@ the policy, command, budget, backend and candidate it actually uses. Incomplete,
 budget-exceeded, dependency-drift or cannot-verify reports do not supply completed
 evidence. This metadata does not authenticate an unsigned report. The default v1
 signed statement remains unchanged and does not include this producer binding.
+
+## Opt-in v2 producer and executable consumer
+
+Use `attestation sign --schema-version 2` with the exact bytes of a completed
+`verify --json` report, then use `attestation admit` in the admission job. V1
+signing and verification keep their existing format and signature encoding.
+V2 currently supports **only `suite-exit-only`**. The execution backend keeps its existing residuals, including checkpointed-local same-host mutation limits; signed transport does not improve that backend. An external-oracle or unknown
+assurance requirement fails this consumer; the finite oracle requires its own
+protected provenance and future admission binding.
+
+The protected job prepares a v2 payload from its authenticated request and trusted
+configuration. It includes exactly the existing v1 binding fields, plus
+`schema_version: 2`, `repository`, `tree`, `verifier_hash`,
+`assurance: "suite-exit-only"`, `exception: null`, `issued_at` and `expires_at`.
+The policy and verifier hashes use the same canonical encoding as the local
+verification record. The verifier hash includes the actual command, budget,
+declared inputs, backend and image, so changing a command flag cannot retain the
+same verifier identity. The baseline is the resolved baseline actually used;
+a control plane requiring an exact baseline also uses `verify --require-ancestor`.
+
+For a clean request, an illustrative payload is:
+
+```json
+{
+  "schema_version": 2,
+  "repository": "hexrift/tamperward",
+  "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "base": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "tree": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "gate_version": "2.51.0",
+  "policy_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "verifier_hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "verdict": "VERIFIED",
+  "assurance": "suite-exit-only",
+  "exception": null,
+  "audience": "hexrift/tamperward:merge",
+  "nonce": "protected-request-42/attempt-1",
+  "issued_at": "2026-11-01T12:00:00.000Z",
+  "expires_at": "2026-11-01T12:10:00.000Z"
+}
+```
+
+The paths below belong to the protected job. The launcher, CLI, policy, evidence
+output path, payload and digest must be outside candidate control. Run candidate
+code without the signing key and transfer the resulting artifact through the
+protected job's authenticated artifact channel. Obtain its SHA-256 in that trusted
+producer channel; computing a digest over an untrusted candidate submission does
+not establish provenance. Signing deliberately refuses a report without the
+completed producer binding, contradictory stage exits, another candidate, changed
+policy or verifier, wrong assurance, or a mismatched artifact digest.
+
+```sh
+tamperward verify --base "$TRUSTED_BASE" --require-ancestor --json \
+  > /protected/evidence/verify.json
+sha256sum /protected/evidence/verify.json
+
+tamperward attestation sign --schema-version 2 \
+  --payload /protected/request/payload-v2.json \
+  --evidence /protected/evidence/verify.json \
+  --sha256 "$PRODUCER_EVIDENCE_SHA256" \
+  --key /protected/signing/ed25519-private.pem \
+  --out /protected/evidence/signed-v2.json
+```
+
+The signature covers the exact evidence-byte digest, reconstructed stage summary,
+producer identity, assurance and its residual limitation, exception, request scope
+and validity window under a separate v2 domain. The bounded signed statement
+contains no suite logs or command text. Signing reads regular files, limits the
+report to 256 KiB, and creates a fresh output file with mode 0600. A SHA-256 match
+and signature prove which artifact the protected signer accepted; they do not
+prove an unsafe signer ran the suite or protect keys the operator exposes to
+candidate code.
+
+The admission job constructs `expected-v2.json` with exactly the payload's binding
+fields, omitting `schema_version`, `issued_at` and `expires_at`. It obtains current
+repository, head, intended baseline, tree, audience and fresh nonce from its own
+request; required policy, verifier and suite assurance come from protected
+configuration and the independently trusted verifier. It must not copy them from
+the candidate's submitted statement. It loads the public key from protected
+configuration and requires this command to succeed:
+
+```sh
+tamperward attestation admit \
+  --statement /protected/evidence/signed-v2.json \
+  --key /protected/config/ed25519-public.pem \
+  --expect /protected/request/expected-v2.json
+```
+
+The executable consumer checks every binding, signature, signer and expiry. A
+stale head, tree or baseline; changed policy or verifier; wrong repository, action,
+signer or nonce; unsupported assurance; incomplete evidence; or an unsigned/v1
+claim exits 2. A statement replayed into a new request or retry fails its new nonce.
+The CLI has no one-use database: a replay in the *same* valid request scope remains
+cryptographically valid until expiry. The protected service must atomically consume
+that nonce with its final admission transaction when one-use admission is required,
+and recheck the current request identities immediately before that transaction.
+
+A `MASKED_FAILURE` can be admitted only as a separate explicit exception. Both the
+signed payload and independently expected request must name
+`exception: {"rule":"verify","head":"<exact-head>","approval":"<trusted-signoff-token>"}`;
+the completed verify report must carry that same trusted `oob_signoff`. A clean
+`VERIFIED` statement requires `exception: null`. Admission preserves and prints
+`MASKED_FAILURE` for an approved exception; it never changes that verdict to
+`VERIFIED`. Red suites, budget exhaustion and cannot-verify evidence cannot be
+admitted by this flow.
