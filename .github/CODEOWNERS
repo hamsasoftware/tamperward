@@ -7,14 +7,14 @@
 # as surely as a detector does — a `hasBlocking` that returns false is a bypass with no
 # detector touched. `package.json` carries the build and test scripts the gate runs and
 # the version that triggers a release; the lockfile pins what those scripts execute.
-/.tamperward.yml        @hexrift
-/.github/               @hexrift
+/.tamperward.yml        @hamsa-jama
+/.github/               @hamsa-jama
 # audit/pending/ batches are the reviewed input to the write-capable post-merge
 # tamperward-audit workflow; a code owner must sign off on what enters the
 # evidence set. Effective only where branch protection requires code-owner review.
-/audit/                 @hexrift
-/.husky/                @hexrift
-/src/                   @hexrift
-/package.json           @hexrift
-/package-lock.json      @hexrift
-/tsconfig.json          @hexrift
+/audit/                 @hamsa-jama
+/.husky/                @hamsa-jama
+/src/                   @hamsa-jama
+/package.json           @hamsa-jama
+/package-lock.json      @hamsa-jama
+/tsconfig.json          @hamsa-jama

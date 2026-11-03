@@ -1,11 +1,11 @@
 blank_issues_enabled: false
 contact_links:
   - name: Report a bypass or other security issue (private)
-    url: https://github.com/hexrift/tamperward/security/advisories/new
+    url: https://github.com/hamsasoftware/tamperward/security/advisories/new
     about: >-
       A way to delete, skip, or gut a protected check without a blocking finding,
       a fail-open, a self-authorisation, or a sign-off escape is a vulnerability —
       do NOT open a public issue. Use private vulnerability reporting. See SECURITY.md.
   - name: Documentation
-    url: https://hexrift.github.io/tamperward/
+    url: https://hamsasoftware.github.io/tamperward/
     about: The guide, CLI reference, policy schema, and the research series.

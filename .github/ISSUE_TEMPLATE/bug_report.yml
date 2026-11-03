@@ -8,7 +8,7 @@ body:
         **A bypass is not a bug report.** If the gate *allowed* something it should
         have blocked — a deleted or gutted test, a silenced check, a fail-open — that
         is a vulnerability: report it privately, not here. See
-        [SECURITY.md](https://github.com/hexrift/tamperward/blob/main/SECURITY.md).
+        [SECURITY.md](https://github.com/hamsasoftware/tamperward/blob/main/SECURITY.md).
 
 
         This form is for the gate doing the wrong thing in a way that is safe to
