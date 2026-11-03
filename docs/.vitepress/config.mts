@@ -33,7 +33,7 @@ const referenceSidebar = [
   },
 ]
 
-// Deployed to GitHub Pages at hexrift.github.io/tamperward — `base` must match the
+// Deployed to GitHub Pages at hamsasoftware.github.io/tamperward — `base` must match the
 // repo name or every asset 404s. The docs build is a separate workflow (docs.yml);
 // nothing here ships in the npm package.
 export default defineConfig({
