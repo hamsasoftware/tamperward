@@ -144,6 +144,16 @@ describe('GitHub authority evidence survives fallback (#795)', () => {
       .toContain(`bind status check typecheck to GitHub Actions integration ${REPOSITORY_REQUIRED_CHECK_INTEGRATION_ID}`);
   });
 
+  it.each(['hexrift/tamperward', 'hamsasoftware/tamperward', 'HamsaSoftware/Tamperward'])(
+    'applies the pinned repository contract to %s without an explicit contract flag',
+    repository => {
+      const ownOpts = { repo: repository, branch: 'main' };
+      const api = apiFor({ rules: rulesFor(REPOSITORY_REQUIRED_CHECKS, repository, false) }, repository);
+      expect(githubAuthority(ownOpts, '.', api).findings)
+        .toContain(`bind status check typecheck to GitHub Actions integration ${REPOSITORY_REQUIRED_CHECK_INTEGRATION_ID}`);
+    },
+  );
+
   it('cannot improve a safe verdict by adding unknown or adverse bypass evidence', () => {
     const rules = rulesFor(['tamperward']);
     expect(evaluateGitHubProtection({ rules, bypassActors: [] })).toEqual([]);

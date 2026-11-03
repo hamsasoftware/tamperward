@@ -523,6 +523,13 @@ function githubApi(cwd: string, endpoint: string): unknown {
 }
 
 /** @internal The transport seam exercises collection and fallback without live API access. */
+
+const TAMPERWARD_REPOSITORIES = new Set(['hexrift/tamperward', 'hamsasoftware/tamperward']);
+
+function isTamperwardRepository(repo: string): boolean {
+  return TAMPERWARD_REPOSITORIES.has(repo.toLowerCase());
+}
+
 export function githubAuthority(
   opts: DoctorOpts,
   cwd: string,
@@ -546,10 +553,10 @@ export function githubAuthority(
     throw new Error('choose either --check-contract or --required-checks');
   }
   const requiredChecks = opts.checkContract === 'tamperward-repo' ||
-    (repo.toLowerCase() === 'hexrift/tamperward' && !opts.requiredChecks)
+    (isTamperwardRepository(repo) && !opts.requiredChecks)
     ? REPOSITORY_REQUIRED_CHECKS
     : opts.requiredChecks ?? ['tamperward'];
-  const expectedIntegrationId = repo.toLowerCase() === 'hexrift/tamperward'
+  const expectedIntegrationId = isTamperwardRepository(repo)
     ? REPOSITORY_REQUIRED_CHECK_INTEGRATION_ID
     : undefined;
   if (requiredChecks.length === 0 || requiredChecks.some(check => !check.trim())) {

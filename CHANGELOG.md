@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.52.3] — 2026-11-03
+
+### Fixed
+
+- Doctor applies the repository-specific required-check contract and pinned GitHub
+  Actions integration to `hamsasoftware/tamperward` as well as `hexrift/tamperward`,
+  so the check keeps working after the repository moved organisations.
+
 ## [2.52.2] — 2026-11-01
 
 ### Fixed
