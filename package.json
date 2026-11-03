@@ -4,13 +4,13 @@
   "description": "The deterministic agent-integrity gate. One ruleset, evaluated on the actual diff/commands as a verdict, enforced everywhere a change can be made.",
   "license": "Apache-2.0",
   "author": "hexrift",
-  "homepage": "https://github.com/hexrift/tamperward#readme",
+  "homepage": "https://github.com/hamsasoftware/tamperward#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hexrift/tamperward.git"
+    "url": "git+https://github.com/hamsasoftware/tamperward.git"
   },
   "bugs": {
-    "url": "https://github.com/hexrift/tamperward/issues"
+    "url": "https://github.com/hamsasoftware/tamperward/issues"
   },
   "keywords": [
     "ai-agents",

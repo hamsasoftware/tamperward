@@ -9,7 +9,7 @@ body:
         `block`-severity rule must be mechanical** — decidable from the diff or the
         command with certainty. A signal that cannot meet that ships as `warn` until
         its precision is measured against a negatives corpus. See
-        [CONTRIBUTING.md](https://github.com/hexrift/tamperward/blob/main/CONTRIBUTING.md).
+        [CONTRIBUTING.md](https://github.com/hamsasoftware/tamperward/blob/main/CONTRIBUTING.md).
   - type: textarea
     id: problem
     attributes:
@@ -39,7 +39,7 @@ body:
         against, what is pre-registered before any result is read, and what a weak
         result would look like (weak results publish too). For a detector: the
         negatives corpus its precision would be read from. See
-        [docs/guide/research.md](https://github.com/hexrift/tamperward/blob/main/docs/guide/research.md)
+        [docs/guide/research.md](https://github.com/hamsasoftware/tamperward/blob/main/docs/guide/research.md)
         and CONTRIBUTING.md "Measurement discipline".
     validations:
       required: false
