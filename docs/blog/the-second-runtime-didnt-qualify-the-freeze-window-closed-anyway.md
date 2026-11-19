@@ -23,9 +23,9 @@ methodological property is worth a post of its own.*
 > **Update, 2026-10-05.** Later on the day this post was published, the
 > outcomes-known registration that the closing section calls for was written and
 > merged by the maintainer:
-> [`PREDICTION4.1-taskbench.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round4.1/PREDICTION4.1-taskbench.md)
+> [`PREDICTION4.1-taskbench.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round4.1/PREDICTION4.1-taskbench.md)
 > (#675, 2026-09-24), with the dated M2 amendment in
-> [`SPEC.md`](https://github.com/hexrift/tamperward/blob/main/SPEC.md) §9.1. It is
+> [`SPEC.md`](https://github.com/hamsasoftware/tamperward/blob/main/SPEC.md) §9.1. It is
 > labelled as written with Round 4's outcomes known, exactly as step 2 below
 > requires, so the lines below that say no Round 4.1 registration exists describe
 > the state at the hour of publication, not the state now. What has not changed:
@@ -200,14 +200,14 @@ let close is reported, not quietly reclassified.
 ---
 
 *Design of record:
-[`PREDICTION4-taskbench.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round4/PREDICTION4-taskbench.md) §7
-and [`FRAME5.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round4/FRAME5.md)
+[`PREDICTION4-taskbench.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round4/PREDICTION4-taskbench.md) §7
+and [`FRAME5.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round4/FRAME5.md)
 (M2, the second-runtime clause). Runtime state: `docs/guide/runtime-adapters.md`
 (Codex #482/#563, Copilot CLI #598, Copilot SDK-hosted #611) and
 `src/runtimes.ts` (every runtime other than Claude Code `neutral`). Round 4's
 sealed result:
-[`ROUND4-RESULTS.json`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round4/ROUND4-RESULTS.json),
+[`ROUND4-RESULTS.json`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round4/ROUND4-RESULTS.json),
 readout
-[`ROUND4-ANALYSIS.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round4/ROUND4-ANALYSIS.md).
+[`ROUND4-ANALYSIS.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round4/ROUND4-ANALYSIS.md).
 No frozen binding file, no recorded verdict, and no counted-round registration
 was altered by this post; it records a state, it does not change one.*

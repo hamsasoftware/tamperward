@@ -127,6 +127,6 @@ couldn't resolve.** Everything — the frozen sentence, the three policy
 configs, the sweep scripts, the feature that measured zero, and the bets —
 is in the repo.
 
-— [github.com/hexrift/tamperward](https://github.com/hexrift/tamperward) ·
+— [github.com/hamsasoftware/tamperward](https://github.com/hamsasoftware/tamperward) ·
 [npmjs.com/package/tamperward](https://www.npmjs.com/package/tamperward) ·
 [the series](./index.md)
