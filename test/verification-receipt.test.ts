@@ -18,7 +18,6 @@ import {
   classifyReceipt,
   reconcile,
   receiptEvidenceDigest,
-  receiptFromRecord,
   receiptPath,
   type VerificationReceipt,
 } from '../src/verification-receipt';

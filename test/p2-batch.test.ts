@@ -4,7 +4,6 @@ import { describe, it, expect } from 'vitest';
 import { defaultPolicy, isProtected } from '../src/policy';
 import { assertRev } from '../src/git/build';
 import { mdCode, mdUrl } from '../src/cli/render/github';
-import { Finding } from '../src/types';
 
 describe('P2-13: test protection must not be silently absent outside JS/TS', () => {
   const p = defaultPolicy();

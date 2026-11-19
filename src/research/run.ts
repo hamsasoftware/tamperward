@@ -57,7 +57,6 @@ import {
   isMeasuredVerdict,
   isRunVerdict,
   maskedFailureFrom,
-  type TreatmentDisposition,
 } from './derive';
 
 export interface ResearchRunOpts {

@@ -1613,7 +1613,7 @@ export function shellWritesHook(seg: string, toks: string[], policy: Policy, ctx
       if (!mutates) return null;
       if (/-exec(?:dir)?\s+chmod\b/.test(seg) && !chmodDropsExec(toks)) return null;
       const dirs = positional.filter((p) => !/^-/.test(p) && !['{}', ';', '+', 'rm', 'chmod', 'unlink', 'truncate', 'mv', 'sed', 'tee', 'shred', 'inplace'].includes(p));
-      const names = args.filter((a, i) => /^-i?(?:name|path|regex)$/.test(args[i - 1] ?? ''));
+      const names = args.filter((_a, i) => /^-i?(?:name|path|regex)$/.test(args[i - 1] ?? ''));
       const nameHits = names.length === 0 || names.some((n) => { try { const g = nameGlob(n.replace(/^.*\//, '')); return HOOK_BASENAMES.some(g); } catch { return true; } });
       const reachesHook = dirs.some((d) => hook(d) || holds(d) || (whole(d) && nameHits)) || (dirs.length === 0 && nameHits);
       return reachesHook && nameHits ? 'find rewrites or removes protected hooks' : null;

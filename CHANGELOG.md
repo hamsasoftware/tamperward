@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.52.4] — 2026-11-19
+
+### Fixed
+
+- Remove unused imports in `src/` and tests so `tsc --noUnusedLocals` is clean for imports. No behaviour change.
+
 ## [2.52.3] — 2026-11-03
 
 ### Fixed
