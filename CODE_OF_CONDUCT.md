@@ -61,7 +61,7 @@ representative at an online or offline event.
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the maintainers through the repository's private reporting channel:
 open a private report under **Security → Report a vulnerability** on
-https://github.com/hexrift/tamperward and mark it as a conduct report. It reaches
+https://github.com/hamsasoftware/tamperward and mark it as a conduct report. It reaches
 only the maintainers.
 All complaints will be reviewed and investigated promptly and fairly.
 
