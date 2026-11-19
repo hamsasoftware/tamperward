@@ -568,7 +568,7 @@ describe('C · hook configurations compared by the identity of what they run', (
   });
 
   it('a remote tamperward repo entry is the gate without an entry: line', () => {
-    const remote = 'repos:\n  - repo: https://github.com/hexrift/tamperward\n    rev: v2.5.0\n    hooks:\n      - id: tamperward\n';
+    const remote = 'repos:\n  - repo: https://github.com/hamsasoftware/tamperward\n    rev: v2.5.0\n    hooks:\n      - id: tamperward\n';
     expect(msgs([file('.pre-commit-config.yaml', remote, remote + '        stages: [manual]\n')]).join()).toMatch(/manual/);
     expect(msgs([file('.pre-commit-config.yaml', remote, 'repos: []\n')]).join()).toMatch(/removed/);
   });

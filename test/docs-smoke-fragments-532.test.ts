@@ -49,7 +49,7 @@ describe('rendered-site fragment check (#532)', () => {
             `<a href="${BASE}research/round-4.html#security-result">base-prefixed</a>` +
             `<a href="${BASE}guide/rules.html">base-prefixed page, no fragment</a>` +
             `<a href="${BASE}">site root</a>` +
-            '<a href="https://github.com/hexrift/tamperward#readme">external</a>' +
+            '<a href="https://github.com/hamsasoftware/tamperward#readme">external</a>' +
             '<a href="mailto:security@example.invalid">mailto</a>' +
             '<a href="//cdn.example.invalid/x.html#frag">protocol-relative</a>' +
             '<a href="./round-4?ref=1#deviations">query string</a>',
