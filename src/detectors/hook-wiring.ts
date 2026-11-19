@@ -1404,8 +1404,22 @@ const HOOK_BASENAMES = ['pre-commit', 'pre-push', 'commit-msg', 'settings.json',
 
 /** A `find -name` glob as a matcher over hook basenames. */
 function nameGlob(pattern: string): (name: string) => boolean {
-  const re = new RegExp('^' + pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.') + '$');
-  return (n) => re.test(n);
+  return (n) => globMatch(pattern, n);
+}
+
+export function globMatch(pattern: string, name: string): boolean {
+  let p = 0;
+  let n = 0;
+  let star = -1;
+  let mark = 0;
+  while (n < name.length) {
+    if (p < pattern.length && (pattern[p] === '?' || pattern[p] === name[n])) { p++; n++; }
+    else if (p < pattern.length && pattern[p] === '*') { star = p++; mark = n; }
+    else if (star >= 0) { p = star + 1; n = ++mark; }
+    else return false;
+  }
+  while (pattern[p] === '*') p++;
+  return p === pattern.length;
 }
 
 /** The write targets a copy-like command names, dir destinations expanded: `cp

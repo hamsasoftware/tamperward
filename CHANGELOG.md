@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.52.5] — 2026-11-19
+
+### Fixed
+
+- A `find -name` glob inside a diffed command is matched with a linear-time wildcard
+  matcher instead of a regex, so a hostile many-`*` pattern can no longer force
+  polynomial backtracking in hook-wiring detection.
+
 ## [2.52.4] — 2026-11-19
 
 ### Fixed
