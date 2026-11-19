@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { gzipSync, gunzipSync } from 'node:zlib';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { MACHINE_SCHEMA_VERSION } from '../machine-output';
 import { ResearchError } from './adapter';
 import { readPairFiles } from './ledger-files';

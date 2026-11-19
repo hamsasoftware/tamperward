@@ -12,7 +12,7 @@ import { defaultPolicy } from '../src/policy';
 import { testSkip } from '../src/detectors/test-skip';
 import { testDeletion, countTestBlocks } from '../src/detectors/test-deletion';
 import { assertionWeakening } from '../src/detectors/assertion-weakening';
-import type { Change, FileChange } from '../src/types';
+import type { Change } from '../src/types';
 
 const P = defaultPolicy();
 const PATH = 'src/a.spec.ts';
