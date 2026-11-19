@@ -16,7 +16,7 @@ The JSON schemas describe **data shape**, not process status — exit codes are 
 public protocol, documented on [Exit codes](./exit-codes.md).
 
 Every published v1 schema carries a canonical `$id` at an immutable release-tag URL,
-`https://raw.githubusercontent.com/hexrift/tamperward/<tag>/schemas/<schema>-v1.schema.json`,
+`https://raw.githubusercontent.com/hamsasoftware/tamperward/<tag>/schemas/<schema>-v1.schema.json`,
 where `<tag>` is the release that first shipped those exact bytes. A schema keeps its
 identifier across later releases until its bytes change, and then it ships under the
 next release tag. The release workflow creates each tag only after publishing the exact
