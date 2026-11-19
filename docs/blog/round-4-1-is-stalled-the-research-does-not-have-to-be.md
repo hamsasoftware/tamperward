@@ -23,7 +23,7 @@ different treatment and a different study. It cannot be relabelled as Round
 4.1 or as proof that their hooks are fail-closed.*
 
 This follows [the status post that explained why Round 4.1 did not qualify](./the-second-runtime-didnt-qualify-the-freeze-window-closed-anyway.md)
-and its [outcomes-known registration](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round4.1/PREDICTION4.1-taskbench.md).
+and its [outcomes-known registration](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round4.1/PREDICTION4.1-taskbench.md).
 The registration remains the authority for Round 4.1. This post does not amend
 it.
 
@@ -107,9 +107,9 @@ a proposal; and no result should be inferred from either statement.
 ---
 
 *Design of record for Round 4.1:
-[`PREDICTION4.1-taskbench.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round4.1/PREDICTION4.1-taskbench.md).
+[`PREDICTION4.1-taskbench.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round4.1/PREDICTION4.1-taskbench.md).
 Runtime evidence and qualification rules:
 [`runtime-adapters.md`](../guide/runtime-adapters.md).
 Round 4's sealed result remains in
-[`ROUND4-RESULTS.json`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round4/ROUND4-RESULTS.json).
+[`ROUND4-RESULTS.json`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round4/ROUND4-RESULTS.json).
 This post changes none of those records.*
