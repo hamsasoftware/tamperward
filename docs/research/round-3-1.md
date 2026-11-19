@@ -22,12 +22,12 @@ entrypoint was invoked inadvertently and one Sonnet trajectory
 (`08-celery-py-amqp`, ungated) executed before the preregistration line. It was
 quarantined unread, the task excluded as spent under the project's own no-reroll
 rule, and the round registered on 16 pairs. The quarantine record is committed
-([`QUARANTINE-prereg-incident/`](https://github.com/hexrift/tamperward/tree/main/harness/taskbench/round3.1/QUARANTINE-prereg-incident)).
+([`QUARANTINE-prereg-incident/`](https://github.com/hamsasoftware/tamperward/tree/main/harness/taskbench/round3.1/QUARANTINE-prereg-incident)).
 
 ## Result
 
 Every value is the verbatim output of the frozen `analyze3.mjs`
-([`ANALYSIS3.1-output.txt`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round3.1/runs-phase3/ANALYSIS3.1-output.txt)).
+([`ANALYSIS3.1-output.txt`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round3.1/runs-phase3/ANALYSIS3.1-output.txt)).
 
 | quantity | value |
 | --- | --- |
@@ -53,7 +53,7 @@ opportunities.
 Sensitivity (descriptive): excluding both pairs that contain a post-start
 adjudicated trajectory leaves b=1, c=0, p = 1.0000 over 14 pairs; completion RD
 moves +18.8 → +28.6pp, transfer 4/16 → 3/14
-([`ANALYSIS3.1-sensitivity-no-interrupted.txt`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round3.1/runs-phase3/ANALYSIS3.1-sensitivity-no-interrupted.txt)).
+([`ANALYSIS3.1-sensitivity-no-interrupted.txt`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round3.1/runs-phase3/ANALYSIS3.1-sensitivity-no-interrupted.txt)).
 
 ## What it supports
 
@@ -87,7 +87,7 @@ repeated driver disappearance; two interrupted trajectories were adjudicated
 before the change. Four engineering defects (stale oracle path, resume
 deadlock, cleanup deleting unadjudicated evidence, process supervision) are
 recorded in
-[`RESULTS-ARTICLE-COMMITMENTS.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round3.1/RESULTS-ARTICLE-COMMITMENTS.md).
+[`RESULTS-ARTICLE-COMMITMENTS.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round3.1/RESULTS-ARTICLE-COMMITMENTS.md).
 Two gated trajectories carry `denies: null` because the reconstruction path
 does not re-derive the field — recorded as undetermined, not imputed.
 
@@ -108,8 +108,8 @@ Full text on the [errata page](../blog/errata.md).
 
 ## Artifacts
 
-- Registration: [`harness/taskbench/round3.1/PREDICTION3.1-taskbench.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round3.1/PREDICTION3.1-taskbench.md); plan [`ROUND3.1-PLAN.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round3.1/ROUND3.1-PLAN.md)
-- Scored bets: [`harness/taskbench/round3.1/BETS3.1-SCORECARD.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round3.1/BETS3.1-SCORECARD.md)
-- Verdict ledger (32 lines): [`harness/taskbench/round3.1/runs-phase3/results.jsonl`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round3.1/runs-phase3/results.jsonl) (sha256 `12429bcb…`)
-- Frozen analyzer output: [`ANALYSIS3.1-output.txt`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round3.1/runs-phase3/ANALYSIS3.1-output.txt)
+- Registration: [`harness/taskbench/round3.1/PREDICTION3.1-taskbench.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round3.1/PREDICTION3.1-taskbench.md); plan [`ROUND3.1-PLAN.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round3.1/ROUND3.1-PLAN.md)
+- Scored bets: [`harness/taskbench/round3.1/BETS3.1-SCORECARD.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round3.1/BETS3.1-SCORECARD.md)
+- Verdict ledger (32 lines): [`harness/taskbench/round3.1/runs-phase3/results.jsonl`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round3.1/runs-phase3/results.jsonl) (sha256 `12429bcb…`)
+- Frozen analyzer output: [`ANALYSIS3.1-output.txt`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round3.1/runs-phase3/ANALYSIS3.1-output.txt)
 - Posts: [preregistration](../blog/before-we-test-the-same-tasks-on-a-stronger-model.md) · [results — The mechanism transferred. The confirmatory result didn't replicate.](../blog/the-mechanism-transferred-the-effect-didnt.md)
