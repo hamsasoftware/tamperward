@@ -68,14 +68,14 @@ function sarifLog(command: 'check' | 'verify', properties: Record<string, unknow
       tool: { driver: {
         name: 'Tamperward',
         semanticVersion: TW_VERSION,
-        informationUri: 'https://github.com/hexrift/tamperward',
+        informationUri: 'https://github.com/hamsasoftware/tamperward',
         rules: SARIF_RULES_V1.map(rule => ({
           id: rule.id,
           name: rule.name,
           shortDescription: { text: rule.description },
           fullDescription: { text: rule.description },
           help: { text: rule.description + ' Review the finding remediation and restore the integrity check.' },
-          helpUri: 'https://github.com/hexrift/tamperward/blob/main/docs/guide/rules.md',
+          helpUri: 'https://github.com/hamsasoftware/tamperward/blob/main/docs/guide/rules.md',
           defaultConfiguration: { level: rule.level },
         })),
       } },

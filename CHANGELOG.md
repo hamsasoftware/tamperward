@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.52.6] — 2026-11-19
+
+### Fixed
+
+- SARIF `informationUri` and rule `helpUri`, and the policy header written by `init`,
+  link to `hamsasoftware/tamperward` instead of the former `hexrift/tamperward`.
+
 ## [2.52.5] — 2026-11-19
 
 ### Fixed
