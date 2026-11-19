@@ -2,7 +2,7 @@
 
 - Date: 2026-10-13
 - Status: Proposed
-- Issue: [#770](https://github.com/hexrift/tamperward/issues/770)
+- Issue: [#770](https://github.com/hamsasoftware/tamperward/issues/770)
 
 ## Context
 
