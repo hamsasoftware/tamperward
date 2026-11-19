@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/hexrift/tamperward/v2.49.0/schemas/oracle-v2.schema.json",
+  "$id": "https://raw.githubusercontent.com/hamsasoftware/tamperward/v2.52.8/schemas/oracle-v2.schema.json",
   "title": "TamperWard independent JSON RPC oracle result v2",
   "type": "object", "additionalProperties": false,
   "required": ["schema_version", "verdict", "planned", "completed", "passed", "oracle_assurance"],

@@ -289,9 +289,9 @@ jobs:
           for file in schemas/*.schema.json; do
             name="$(basename "$file" .schema.json)"
             id="$(node -e 'const fs=require("fs"); const s=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(s["$id"] || "")' "$file")"
-            pattern="^https://raw\.githubusercontent\.com/hexrift/tamperward/(v[0-9]+\.[0-9]+\.[0-9]+)/schemas/${name}\.schema\.json$"
+            pattern="^https://raw\.githubusercontent\.com/(hexrift|hamsasoftware)/tamperward/(v[0-9]+\.[0-9]+\.[0-9]+)/schemas/${name}\.schema\.json$"
             [[ "$id" =~ $pattern ]] || { echo "canonical id malformed in $file: $id"; exit 1; }
-            ref="${BASH_REMATCH[1]}"
+            ref="${BASH_REMATCH[2]}"
             if [ "$ref" != "v${VERSION}" ]; then
               git rev-parse -q --verify "refs/tags/${ref}^{commit}" >/dev/null || { echo "canonical id in $file names $ref, which is not a release tag"; exit 1; }
               git show "${ref}:${file}" | cmp -s - "$file" || { echo "canonical id in $file names $ref but the bytes changed since; a changed schema ships under v${VERSION}"; exit 1; }
