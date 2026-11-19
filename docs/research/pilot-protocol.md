@@ -96,7 +96,7 @@ the denominator (fires adjudicated) and the number left `unclear`.
 ## False-positive adjudication
 
 The criterion is fixed before any fire is opened, per rule, as
-[`harness/fp-study/ADJUDICATION-RULE.md`](https://github.com/hexrift/tamperward/blob/main/harness/fp-study/ADJUDICATION-RULE.md)
+[`harness/fp-study/ADJUDICATION-RULE.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/fp-study/ADJUDICATION-RULE.md)
 does for the corpus studies. For a pilot the question is the same one that file asks:
 *would the block have wrongly stopped legitimate work?*
 

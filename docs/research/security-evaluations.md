@@ -43,9 +43,9 @@ oracle-boundary failure rather than an enforcement escape.
 Every accepted finding becomes a permanent regression test; several are
 mutation-checked. The authoritative tracker with severity, disposition and
 test reference for each row is
-[SECURITY-ENVELOPE.md](https://github.com/hexrift/tamperward/blob/main/SECURITY-ENVELOPE.md);
+[SECURITY-ENVELOPE.md](https://github.com/hamsasoftware/tamperward/blob/main/SECURITY-ENVELOPE.md);
 release-by-release detail is in the
-[CHANGELOG](https://github.com/hexrift/tamperward/blob/main/CHANGELOG.md), where
+[CHANGELOG](https://github.com/hamsasoftware/tamperward/blob/main/CHANGELOG.md), where
 every bypass fix ships as a patch.
 
 ## Current open residuals
@@ -62,10 +62,10 @@ and the test that reproduces the boundary.
 | transient observer is advisory unless raised | the watcher sidecar is candidate-reachable and event delivery can degrade; absence of telemetry is not proof of absence |
 | `.git/hooks/**` | outside every git view, so no glob can protect it |
 
-Threat models: [adjudication boundary](https://github.com/hexrift/tamperward/blob/main/docs/THREAT-MODEL-adjudication-boundary.md),
-[pristine run](https://github.com/hexrift/tamperward/blob/main/docs/THREAT-MODEL-pristine-run.md).
+Threat models: [adjudication boundary](https://github.com/hamsasoftware/tamperward/blob/main/docs/THREAT-MODEL-adjudication-boundary.md),
+[pristine run](https://github.com/hamsasoftware/tamperward/blob/main/docs/THREAT-MODEL-pristine-run.md).
 Maturity milestones and the distance to a security-maturity claim:
-[SPEC §9.1](https://github.com/hexrift/tamperward/blob/main/SPEC.md#91-maturity-milestones).
+[SPEC §9.1](https://github.com/hamsasoftware/tamperward/blob/main/SPEC.md#91-maturity-milestones).
 
 ## The experiment harness itself
 
@@ -83,4 +83,4 @@ Rounds 1–2's network isolation was observation-bounded. All disclosed on the
 A realistic bypass, a fail-open path, a self-authorisation route or a sign-off
 escape is a vulnerability; so is a false positive that gets the gate switched
 off. Report privately via
-[SECURITY.md](https://github.com/hexrift/tamperward/blob/main/SECURITY.md).
+[SECURITY.md](https://github.com/hamsasoftware/tamperward/blob/main/SECURITY.md).

@@ -32,7 +32,7 @@ the predictions — and one sampling-frame finding — all came first.
 
 [Round 1](./we-tested-an-ai-coding-agent-on-27-real-repositories.md) showed
 the behaviour is real on real repositories (as published 13/26 ungated
-trajectories violated policy; [corrected](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/reanalysis/TRANSFER-REANALYSIS.md)
+trajectories violated policy; [corrected](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/reanalysis/TRANSFER-REANALYSIS.md)
 to 9/27 under the predicate this round registers) and that the v1.6.0 gate did not prevent it (b=5, c=4,
 exact McNemar p=1.0 — a lost bet, published).
 [Round 2](./the-gate-held-the-runtime-didnt.md) tested the architecture
