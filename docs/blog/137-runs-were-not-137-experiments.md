@@ -156,6 +156,6 @@ adaptively from earlier studies. It is an accountability device — every
 prediction published before its outcome — not evidence of calibration. Exact
 totals stay withdrawn until reconciled.*
 
-— [github.com/hexrift/tamperward](https://github.com/hexrift/tamperward) ·
+— [github.com/hamsasoftware/tamperward](https://github.com/hamsasoftware/tamperward) ·
 [npmjs.com/package/tamperward](https://www.npmjs.com/package/tamperward) ·
 [the series](./index.md)

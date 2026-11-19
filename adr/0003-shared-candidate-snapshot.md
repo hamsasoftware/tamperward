@@ -2,7 +2,7 @@
 
 - Date: 2026-11-01
 - Status: Accepted
-- Issue: [#800](https://github.com/hexrift/tamperward/issues/800)
+- Issue: [#800](https://github.com/hamsasoftware/tamperward/issues/800)
 
 ## Decision
 

@@ -3,7 +3,7 @@
 *Preregistered confirmatory experiment. Status: **complete — sealed.** The
 primary prediction **did not replicate**; a narrower security result held. Every
 figure on this page is the sealed value in
-[`ROUND4-RESULTS.json`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round4/ROUND4-RESULTS.json)
+[`ROUND4-RESULTS.json`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round4/ROUND4-RESULTS.json)
 (`payload_sha256` `e7bfce08…`, authoritative provenance), and CI re-reads that
 artifact to check this page. Series-wide caveats:
 [limitations](../blog/limitations.md). Corrections: [errata](../blog/errata.md).*
@@ -30,7 +30,7 @@ manifest row and treatment, zero missing, stray or co-present records. Of the
 239 verdicts, **201 measured** and 38 `INVALID_MEASUREMENT`. The census is
 fail-closed: the analyzer refuses to write a sealed artifact on any census
 failure, regression-tested by
-[`analyze-counted.selftest.sh`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round4/analyze-counted.selftest.sh)
+[`analyze-counted.selftest.sh`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round4/analyze-counted.selftest.sh)
 in CI.
 
 ## Primary result — do not reject H₀
@@ -150,7 +150,7 @@ to be bias-free.
 ## Deviations
 
 Recorded in
-[`harness/taskbench/round4/DEVIATIONS.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round4/DEVIATIONS.md)
+[`harness/taskbench/round4/DEVIATIONS.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round4/DEVIATIONS.md)
 (ledger sha256 `50d6994e…`): D32 (frame extension mapped after mining began —
 a sequence deviation, disclosed), D33 (`UNCLONABLE_LIVE` registered during
 mining), D36 (one-replacement pre-sampling recovery: exercised once cleanly at
@@ -162,8 +162,8 @@ version was bumped for any deviation.
 
 ## Artifacts
 
-- Registration: [`harness/taskbench/round4/PREDICTION4-taskbench.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round4/PREDICTION4-taskbench.md) (freeze 2, 2026-09-07); frame [`FRAME5.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round4/FRAME5.md) and amendments; pilot [`PILOT4.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round4/PILOT4.md); power [`power/POWER-SIM.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round4/power/POWER-SIM.md)
-- Frozen draw: [`harness/taskbench/round4/COUNTED-EXECUTION-MANIFEST.json`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round4/COUNTED-EXECUTION-MANIFEST.json)
-- Sealed results: [`harness/taskbench/round4/ROUND4-RESULTS.json`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round4/ROUND4-RESULTS.json); readout [`harness/taskbench/round4/ROUND4-ANALYSIS.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round4/ROUND4-ANALYSIS.md); engine [`analyze-counted.mjs`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round4/analyze-counted.mjs)
-- Per-trajectory verdicts and execution ledger: `round4-counted-state` @ [`979a5d27`](https://github.com/hexrift/tamperward/tree/979a5d273bd03dd9699c2cf51526715c57563534); oversized final-tree evidence in the content-addressed `round4-evidence` release
+- Registration: [`harness/taskbench/round4/PREDICTION4-taskbench.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round4/PREDICTION4-taskbench.md) (freeze 2, 2026-09-07); frame [`FRAME5.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round4/FRAME5.md) and amendments; pilot [`PILOT4.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round4/PILOT4.md); power [`power/POWER-SIM.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round4/power/POWER-SIM.md)
+- Frozen draw: [`harness/taskbench/round4/COUNTED-EXECUTION-MANIFEST.json`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round4/COUNTED-EXECUTION-MANIFEST.json)
+- Sealed results: [`harness/taskbench/round4/ROUND4-RESULTS.json`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round4/ROUND4-RESULTS.json); readout [`harness/taskbench/round4/ROUND4-ANALYSIS.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round4/ROUND4-ANALYSIS.md); engine [`analyze-counted.mjs`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round4/analyze-counted.mjs)
+- Per-trajectory verdicts and execution ledger: `round4-counted-state` @ [`979a5d27`](https://github.com/hamsasoftware/tamperward/tree/979a5d273bd03dd9699c2cf51526715c57563534); oversized final-tree evidence in the content-addressed `round4-evidence` release
 - Posts: [methodology and preregistration](../blog/how-round-4-is-built-to-be-hard-to-fool.md) · [results](../blog/the-prevention-bet-didnt-replicate-no-surviving-tampering-was-certified-clean.md)

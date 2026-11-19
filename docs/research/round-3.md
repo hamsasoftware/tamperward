@@ -23,7 +23,7 @@ treatment (1.9.0 → 1.14.0), so ecosystem transfer is not isolated as a factor.
 ## Result
 
 Every value is the verbatim output of the frozen `analyze3.mjs`
-([`ANALYSIS3-output.txt`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round3/runs-phase3/ANALYSIS3-output.txt)).
+([`ANALYSIS3-output.txt`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round3/runs-phase3/ANALYSIS3-output.txt)).
 
 | quantity | value |
 | --- | --- |
@@ -72,7 +72,7 @@ Every value is the verbatim output of the frozen `analyze3.mjs`
   requests, below the ≥95% prediction; 97.7% among external-host attempts); B4
   marked non-evaluable as registered; an interim 13-block figure reconciled to
   the artifact-canonical 14. None changes b=6, c=0, p=0.0313.
-  [`revalidation-corrections.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round3/revalidation-corrections.md).
+  [`revalidation-corrections.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round3/revalidation-corrections.md).
 - **2026-09-01 — `verify` bypass, 1.14.1**, present 1.9.0 through 1.14.0.
 - **2026-09-01 — framing:** "at roughly the rate it exists in JavaScript" was
   withdrawn (the corrected JS rounds are a spread, 33.3% and 54.5%).
@@ -81,8 +81,8 @@ Full text on the [errata page](../blog/errata.md).
 
 ## Artifacts
 
-- Registration: [`harness/taskbench/round3/PREDICTION3-taskbench.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round3/PREDICTION3-taskbench.md); plan [`ROUND3-PLAN.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round3/ROUND3-PLAN.md); frame [`FRAME3.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round3/FRAME3.md); funnel [`FUNNEL3.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round3/FUNNEL3.md); hashes [`ROUND3-HASHES.txt`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round3/ROUND3-HASHES.txt)
-- Verdict ledger (34 lines): [`harness/taskbench/round3/runs-phase3/results.jsonl`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round3/runs-phase3/results.jsonl)
-- Frozen analyzer and output: [`harness/taskbench/analyze3.mjs`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/analyze3.mjs) (sha256 `45164b5e…`), [`ANALYSIS3-output.txt`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round3/runs-phase3/ANALYSIS3-output.txt)
-- Audit of the control-plane exposure: [`harness/taskbench/round3/audit/`](https://github.com/hexrift/tamperward/tree/main/harness/taskbench/round3/audit)
+- Registration: [`harness/taskbench/round3/PREDICTION3-taskbench.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round3/PREDICTION3-taskbench.md); plan [`ROUND3-PLAN.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round3/ROUND3-PLAN.md); frame [`FRAME3.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round3/FRAME3.md); funnel [`FUNNEL3.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round3/FUNNEL3.md); hashes [`ROUND3-HASHES.txt`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round3/ROUND3-HASHES.txt)
+- Verdict ledger (34 lines): [`harness/taskbench/round3/runs-phase3/results.jsonl`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round3/runs-phase3/results.jsonl)
+- Frozen analyzer and output: [`harness/taskbench/analyze3.mjs`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/analyze3.mjs) (sha256 `45164b5e…`), [`ANALYSIS3-output.txt`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round3/runs-phase3/ANALYSIS3-output.txt)
+- Audit of the control-plane exposure: [`harness/taskbench/round3/audit/`](https://github.com/hamsasoftware/tamperward/tree/main/harness/taskbench/round3/audit)
 - Posts: [preregistration](../blog/before-we-test-tamperward-on-python-repositories.md) · [results — The effect transferred. The detector didn't.](../blog/the-effect-transferred-the-detector-didnt.md)

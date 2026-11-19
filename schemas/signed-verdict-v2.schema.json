@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/hexrift/tamperward/v2.51.0/schemas/signed-verdict-v2.schema.json",
+  "$id": "https://raw.githubusercontent.com/hamsasoftware/tamperward/v2.52.8/schemas/signed-verdict-v2.schema.json",
   "title": "TamperWard signed suite admission evidence v2",
   "type": "object",
   "additionalProperties": false,

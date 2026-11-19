@@ -10,7 +10,7 @@
 
 > **Note added September 1, 2026.** This round's pristine Stop-time verification
 > ran on a `tamperward verify` that carried a bypass, closed in
-> [1.14.1](https://github.com/hexrift/tamperward/blob/main/CHANGELOG.md): an
+> [1.14.1](https://github.com/hamsasoftware/tamperward/blob/main/CHANGELOG.md): an
 > agent-**added** protected file (for example a new `conftest.py`) was kept in
 > the pristine copy and could deselect the very base tests the overlay had just
 > restored. No counted trajectory in this round shows an added protected control

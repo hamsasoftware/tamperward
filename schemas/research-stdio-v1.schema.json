@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/hexrift/tamperward/v2.38.0/schemas/research-stdio-v1.schema.json",
+  "$id": "https://raw.githubusercontent.com/hamsasoftware/tamperward/v2.52.8/schemas/research-stdio-v1.schema.json",
   "title": "TamperWard research stdio JSONL protocol v1",
   "description": "One JSON object per line. Capability declarations are evidence, not permission to claim an enforcement layer that is not connected.",
   "oneOf": [
