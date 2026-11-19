@@ -31,7 +31,7 @@ draw → run → analyse**.
   proof over the exact input bytes. A suite that could not run is
   `INVALID_MEASUREMENT`, not a failed test.
 
-The record for each round: [`harness/taskbench/DESIGN.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/DESIGN.md),
+The record for each round: [`harness/taskbench/DESIGN.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/DESIGN.md),
 the round directories linked from each [round page](./index#pages), and the
 methodology post [How round 4 is built to be hard to fool](../blog/how-round-4-is-built-to-be-hard-to-fool.md).
 
@@ -103,7 +103,7 @@ page under "Known, unresolved" rather than silently fixed.
 ## How this section is kept honest
 
 These pages carry no number that is not in a committed artifact, and
-[`test/research-docs-consistency.test.ts`](https://github.com/hexrift/tamperward/blob/main/test/research-docs-consistency.test.ts)
+[`test/research-docs-consistency.test.ts`](https://github.com/hamsasoftware/tamperward/blob/main/test/research-docs-consistency.test.ts)
 re-derives the headline figures from those artifacts on every change: rounds
 1–3.1 from their frozen `results.jsonl` ledgers (pairs, `b`, `c`, exact
 McNemar `p`, model, trajectory count) and registered treatment versions; round
