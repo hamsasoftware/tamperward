@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/hexrift/tamperward/v2.50.0/schemas/receipt-v1.schema.json",
+  "$id": "https://raw.githubusercontent.com/hamsasoftware/tamperward/v2.52.8/schemas/receipt-v1.schema.json",
   "title": "TamperWard local verification receipt v1",
   "type": "object",
   "required": [

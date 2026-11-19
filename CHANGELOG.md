@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.52.8] — 2026-11-19
+
+### Changed
+
+- The `$id` of every published JSON schema now points at
+  `https://raw.githubusercontent.com/hamsasoftware/tamperward/v2.52.8/schemas/...`
+  instead of the former `hexrift/tamperward` URL. Consumers that match schemas by
+  `$id` should accept the new URL; the old `hexrift` URLs keep resolving for the
+  versions that shipped them.
+
 ## [2.52.7] — 2026-11-19
 
 ### Fixed

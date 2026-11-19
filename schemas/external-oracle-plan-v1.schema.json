@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/hexrift/tamperward/v2.47.0/schemas/external-oracle-plan-v1.schema.json",
+  "$id": "https://raw.githubusercontent.com/hamsasoftware/tamperward/v2.52.8/schemas/external-oracle-plan-v1.schema.json",
   "title": "TamperWard external Node JSON RPC oracle plan v1",
   "type": "object", "additionalProperties": false,
   "required": ["protocol", "image", "budget_secs", "cases"],

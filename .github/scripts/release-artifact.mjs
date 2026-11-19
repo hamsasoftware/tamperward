@@ -205,7 +205,7 @@ export function validateSchemas(root, version, cwd, run = runCommand) {
   for (const path of paths) {
     const bytes = readFileSync(join(root, path));
     const schema = json(bytes);
-    const match = /^https:\/\/raw\.githubusercontent\.com\/hexrift\/tamperward\/(v\d+\.\d+\.\d+)\/schemas\/([^/]+)$/.exec(schema.$id);
+    const match = /^https:\/\/raw\.githubusercontent\.com\/(?:hexrift|hamsasoftware)\/tamperward\/(v\d+\.\d+\.\d+)\/schemas\/([^/]+)$/.exec(schema.$id);
     if (!match || match[2] !== basename(path) || semver.gt(match[1].slice(1), version)) throw new Error(`canonical schema identifier malformed: ${path}`);
     if (match[1] !== `v${version}`) {
       const tagged = Buffer.from(run('git', ['show', `refs/tags/${match[1]}:${path}`], { cwd }));

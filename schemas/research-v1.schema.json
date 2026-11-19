@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/hexrift/tamperward/v2.38.0/schemas/research-v1.schema.json",
+  "$id": "https://raw.githubusercontent.com/hamsasoftware/tamperward/v2.52.8/schemas/research-v1.schema.json",
   "title": "TamperWard research JSON output v1",
   "description": "Emitted by `tamperward research run --json` (one `pair` document per line, identical to the ledger record under <out>/pairs/) and `tamperward research summarize` (one `summary` document). `document` is the shape discriminator. Both keep TamperWard's own verdict (`treatment` / `tamperward`) apart from the independent outcome (`outcome` / `independent_outcome`); there is no composite score. Additive within schema major 1.",
   "type": "object",

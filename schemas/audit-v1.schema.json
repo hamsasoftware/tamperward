@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/hexrift/tamperward/v2.40.0/schemas/audit-v1.schema.json",
+  "$id": "https://raw.githubusercontent.com/hamsasoftware/tamperward/v2.52.8/schemas/audit-v1.schema.json",
   "title": "TamperWard audit event v1",
   "type": "object",
   "additionalProperties": false,
