@@ -29,7 +29,7 @@ nothing has to be installed on the Mac. The container is also its own
 supervisor, which is the whole problem being solved.
 
 ```bash
-git clone https://github.com/hexrift/tamperward.git
+git clone https://github.com/hamsasoftware/tamperward.git
 cd tamperward
 git switch main && git pull --ff-only
 cd harness/taskbench/round4
@@ -97,7 +97,7 @@ On an Intel Mac use `/usr/local/opt/...` instead of `/opt/homebrew/opt/...`.
 ### Get the repository
 
 ```bash
-git clone https://github.com/hexrift/tamperward.git
+git clone https://github.com/hamsasoftware/tamperward.git
 cd tamperward
 git switch main && git pull --ff-only
 npm ci
