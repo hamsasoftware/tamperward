@@ -125,11 +125,12 @@ describe('release.yml fetches nothing unpinned at publish time (#423)', () => {
     const pkg: unknown = JSON.parse(readFileSync(join(DIR, '..', '..', 'package.json'), 'utf8'));
     const lock: unknown = JSON.parse(readFileSync(join(DIR, '..', '..', 'package-lock.json'), 'utf8'));
     if (!isRecord(pkg) || !isRecord(pkg.devDependencies)) throw new Error('no devDependencies');
-    expect(pkg.devDependencies.semver).toBe('7.8.5');
+    const pinned = pkg.devDependencies.semver;
+    expect(pinned).toMatch(/^\d+\.\d+\.\d+$/);
     if (!isRecord(lock) || !isRecord(lock.packages)) throw new Error('no lock packages');
     const entry = lock.packages['node_modules/semver'];
     if (!isRecord(entry)) throw new Error('semver is not in the lockfile');
-    expect(entry.version).toBe('7.8.5');
+    expect(entry.version).toBe(pinned);
     expect(entry.dev).toBe(true);
     expect(typeof entry.integrity).toBe('string');
   });
