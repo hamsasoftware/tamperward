@@ -174,7 +174,7 @@ describe('github annotations', () => {
 describe('github job summary', () => {
   const env = {
     GITHUB_SERVER_URL: 'https://github.com',
-    GITHUB_REPOSITORY: 'hexrift/tamperward',
+    GITHUB_REPOSITORY: 'hamsasoftware/tamperward',
     GITHUB_SHA: 'abc123',
   };
 
@@ -201,7 +201,7 @@ describe('github job summary', () => {
 
   it('deep-links the location when Actions supplies the context', () => {
     expect(renderSummary({ findings: [finding()], scanned: 1, ignoredFiles: 0 }, env)).toContain(
-      '(https://github.com/hexrift/tamperward/blob/abc123/src/calc.test.ts#L12)',
+      '(https://github.com/hamsasoftware/tamperward/blob/abc123/src/calc.test.ts#L12)',
     );
   });
 
