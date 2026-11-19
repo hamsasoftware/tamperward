@@ -2,7 +2,7 @@
 
 Every type assertion (`x as T`, `<T>x`) and non-null assertion (`x!`) in `src/` on
 `main` before this change, counted on the TypeScript AST by
-[`harness/fp-study/cast-inventory.mjs`](https://github.com/hexrift/tamperward/blob/main/harness/fp-study/cast-inventory.mjs), with its
+[`harness/fp-study/cast-inventory.mjs`](https://github.com/hamsasoftware/tamperward/blob/main/harness/fp-study/cast-inventory.mjs), with its
 classification and what replaced it. `as const` is a literal-type request and is not
 counted. There were **no** `as any` casts and **no** `as unknown as T` double casts.
 

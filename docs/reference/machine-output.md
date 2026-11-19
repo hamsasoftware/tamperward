@@ -56,7 +56,7 @@ diagnostic on stderr and no SARIF document. Verification's structured fail-close
 emit a `CANNOT_VERIFY` SARIF run. Progress remains on stderr. Explicit SARIF never emits
 GitHub workflow annotations, terminal formatting or a job summary on stdout.
 
-The published vocabulary is [`schemas/sarif-rules-v1.json`](https://github.com/hexrift/tamperward/blob/main/schemas/sarif-rules-v1.json),
+The published vocabulary is [`schemas/sarif-rules-v1.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/sarif-rules-v1.json),
 mirrored by `SARIF_RULE_IDS_V1` and `SARIF_RULES_V1` in `src/sarif.ts`.
 IDs have the form `tamperward/v1/test-skip`; existing IDs retain their meaning within
 vocabulary version 1. Additions are compatible; changing an existing meaning requires a
@@ -117,7 +117,7 @@ A findings document plus a scan summary.
 | `ignoredFiles` | array | Files excluded by `ignore` globs. |
 | `summary` | object | Counts by severity. |
 
-Full contract: [`schemas/check-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/check-v1.schema.json).
+Full contract: [`schemas/check-v1.schema.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/check-v1.schema.json).
 
 ## `verify --json`
 
@@ -160,7 +160,7 @@ verify runs over the merge result, so `adjudicated_tree` can differ from the bra
 tree a receipt binds; `receipt reconcile` compares the two and reports `NON_APPLICABLE`
 when they differ rather than attribute CI's verdict to a tree it never ran. It is absent
 on documents produced before the field existed. Full contract:
-[`schemas/verify-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/verify-v1.schema.json).
+[`schemas/verify-v1.schema.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/verify-v1.schema.json).
 
 ## `run --json`
 
@@ -175,7 +175,7 @@ document after adjudication.
 `CHECK_DIFF_UNJUDGEABLE`, `CHECK_WORKTREE_UNJUDGEABLE`.
 
 Full contract:
-[`schemas/run-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/run-v1.schema.json).
+[`schemas/run-v1.schema.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/run-v1.schema.json).
 
 ## `status --json`
 
@@ -218,18 +218,18 @@ changed — one of `tree`, `head`, `base`, `policy`, `verifier`, `surface`,
 recorded `binding` fingerprints, the live `base`/`head`, and the `verifier_command`.
 Local `CURRENT` is posture/evidence, **not** repository or CI merge authority. Full
 contract:
-[`schemas/status-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/status-v1.schema.json).
+[`schemas/status-v1.schema.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/status-v1.schema.json).
 
 ## Other JSON surfaces
 
 | command | document | schema |
 | --- | --- | --- |
-| `doctor --json` | Installation + authority posture. | [`schemas/doctor-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/doctor-v1.schema.json) |
-| `research run --json` / `research summarize` | Paired records and the aggregate summary (from **2.23.0**). | [`schemas/research-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/research-v1.schema.json) |
-| `stats --json` | Aggregate audit document. | [`schemas/stats-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/stats-v1.schema.json) |
-| `runtime verify --json` / `runtime status --json` | Version-bound, operation-specific runtime capability qualification (from **2.37.0**). | [`schemas/runtime-qualification-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/runtime-qualification-v1.schema.json) |
-| `verify` (on VERIFIED) / `receipt export` | Bounded, transportable **local verification receipt** bound to #600's identity (from **2.38.0**). Evidence, not authority. | [`schemas/receipt-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/receipt-v1.schema.json) |
-| `receipt reconcile --json` | CI reconciliation of a claimed receipt against CI's own rerun of verification; the `result` is always CI's verdict — a receipt can never promote it (from **2.38.0**). | [`schemas/reconcile-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/reconcile-v1.schema.json) |
+| `doctor --json` | Installation + authority posture. | [`schemas/doctor-v1.schema.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/doctor-v1.schema.json) |
+| `research run --json` / `research summarize` | Paired records and the aggregate summary (from **2.23.0**). | [`schemas/research-v1.schema.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/research-v1.schema.json) |
+| `stats --json` | Aggregate audit document. | [`schemas/stats-v1.schema.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/stats-v1.schema.json) |
+| `runtime verify --json` / `runtime status --json` | Version-bound, operation-specific runtime capability qualification (from **2.37.0**). | [`schemas/runtime-qualification-v1.schema.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/runtime-qualification-v1.schema.json) |
+| `verify` (on VERIFIED) / `receipt export` | Bounded, transportable **local verification receipt** bound to #600's identity (from **2.38.0**). Evidence, not authority. | [`schemas/receipt-v1.schema.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/receipt-v1.schema.json) |
+| `receipt reconcile --json` | CI reconciliation of a claimed receipt against CI's own rerun of verification; the `result` is always CI's verdict — a receipt can never promote it (from **2.38.0**). | [`schemas/reconcile-v1.schema.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/reconcile-v1.schema.json) |
 
 The `runtime-qualification` document reports **one explicit state per capability**
 (`PROVEN` \| `PARTIAL` \| `UNPROVEN` \| `UNSUPPORTED` \| `FAIL-OPEN` \| `INCONCLUSIVE`) with
@@ -261,7 +261,7 @@ recorded.
 | `session` | string | Optional `sha256:` + 24 hex hashed session id. |
 
 Full contract:
-[`schemas/audit-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/audit-v1.schema.json).
+[`schemas/audit-v1.schema.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/audit-v1.schema.json).
 See [Audit history & stats](../guide/audit.md) for how to enable and read it.
 
 ## Consuming machine output

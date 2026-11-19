@@ -63,7 +63,7 @@ final-verdict authorities.
 Shared candidate materialization lives in `src/candidate-snapshot.ts`, independently
 of verification and oracle command orchestration. Its named invariants and current
 filesystem/process limits are recorded in
-[ADR 0003](https://github.com/hexrift/tamperward/blob/main/adr/0003-shared-candidate-snapshot.md).
+[ADR 0003](https://github.com/hamsasoftware/tamperward/blob/main/adr/0003-shared-candidate-snapshot.md).
 
 | Boundary | Trusted input | Candidate-controlled input | Result |
 | --- | --- | --- | --- |
@@ -213,7 +213,7 @@ eliminating it (see
 followed by pristine red is a `MASKED_FAILURE`. Two green runs establish only that
 the candidate passes the base suite; they establish neither semantic correctness nor
 a substitute for independent held-out tests. Full assumptions and residual risks:
-[SPEC.md](https://github.com/hexrift/tamperward/blob/main/SPEC.md), [SECURITY-ENVELOPE.md](https://github.com/hexrift/tamperward/blob/main/SECURITY-ENVELOPE.md), and the
+[SPEC.md](https://github.com/hamsasoftware/tamperward/blob/main/SPEC.md), [SECURITY-ENVELOPE.md](https://github.com/hamsasoftware/tamperward/blob/main/SECURITY-ENVELOPE.md), and the
 [series limitations page](./blog/limitations.md).
 
 ## Platform support
@@ -241,7 +241,7 @@ tests the support boundary rather than implying feature parity where none is cla
 
 Each layer of the design exists because an earlier, simpler one was defeated in a
 study or an external audit. The consequence column is the durable lesson; each row's
-primary artifact is [CHANGELOG.md](https://github.com/hexrift/tamperward/blob/main/CHANGELOG.md), [SPEC.md](https://github.com/hexrift/tamperward/blob/main/SPEC.md), and the
+primary artifact is [CHANGELOG.md](https://github.com/hamsasoftware/tamperward/blob/main/CHANGELOG.md), [SPEC.md](https://github.com/hamsasoftware/tamperward/blob/main/SPEC.md), and the
 posts in [docs/blog/](./blog/index.md).
 
 | study / version | consequence |

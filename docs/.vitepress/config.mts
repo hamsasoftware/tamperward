@@ -138,7 +138,7 @@ export default defineConfig({
         },
       ],
     },
-    socialLinks: [{ icon: 'github', link: 'https://github.com/hexrift/tamperward' }],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/hamsasoftware/tamperward' }],
     footer: {
       message: 'Apache-2.0. Every headline number is measured; the pre-registered predictions — including the refuted ones — are committed to the repo.',
     },
