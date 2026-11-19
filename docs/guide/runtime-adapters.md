@@ -6,7 +6,7 @@ the Claude Code PreToolUse hook, the Stop sweep, pre-commit, and CI — manufact
 The only Claude-specific code is a thin seam: the hook I/O (`src/cli/hook.ts`) and the
 Claude adapter (`src/adapters/claude/*`).
 
-Phase 1 of [#482](https://github.com/hexrift/tamperward/issues/482) names that seam as a
+Phase 1 of [#482](https://github.com/hamsasoftware/tamperward/issues/482) names that seam as a
 **type** — the `RuntimeAdapter` contract in `src/adapters/contract.ts` — so a second
 in-loop runtime can implement it without a rewrite, and so the semantics a runtime does
 and does **not** provide are recorded explicitly rather than assumed.
@@ -216,8 +216,8 @@ judged from the root). The payload's `cwd` is a fact to check, not authority to 
 ## Codex (EXPERIMENTAL — adapter exists, not yet 4.1-eligible)
 
 An **experimental** Codex adapter ships in `src/adapters/codex/*`
-([#482](https://github.com/hexrift/tamperward/issues/482),
-[#563](https://github.com/hexrift/tamperward/issues/563)). It is the second implementation
+([#482](https://github.com/hamsasoftware/tamperward/issues/482),
+[#563](https://github.com/hamsasoftware/tamperward/issues/563)). It is the second implementation
 of the neutral `RuntimeAdapter` contract, and it is deliberately conservative.
 
 **Grounded in the real Codex protocol.** The adapter's wire is grounded against the Codex
@@ -337,7 +337,7 @@ for "passed". A FULL result covers these finite probe cases only and still repor
 Round 4.1 as not eligible. Eligibility additionally requires retained evidence that
 `tamperward runtime verify` grades FULL, the separate maintainer-reviewed pinned
 parity run and every other gate in the
-[registered protocol](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round4.1/PREDICTION4.1-taskbench.md).
+[registered protocol](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round4.1/PREDICTION4.1-taskbench.md).
 The probe does not promote a runtime or fill the runtime freeze.
 
 **CI honesty.** A green CI run proves the **build, unit/adapter tests, static gate, protocol
@@ -382,8 +382,8 @@ detector does not report. None of this changes the qualification: `preDeny` stay
 ## GitHub Copilot CLI (EXPERIMENTAL — adapter exists, not yet 4.1-eligible)
 
 An **experimental** GitHub Copilot CLI adapter ships in `src/adapters/copilot/*`
-([#482](https://github.com/hexrift/tamperward/issues/482),
-[#598](https://github.com/hexrift/tamperward/issues/598)). It is the third implementation of
+([#482](https://github.com/hamsasoftware/tamperward/issues/482),
+[#598](https://github.com/hamsasoftware/tamperward/issues/598)). It is the third implementation of
 the neutral `RuntimeAdapter` contract, and — like Codex — it is deliberately conservative.
 
 **Grounded in the published Copilot hook contract, both documented formats.** Copilot CLI is

@@ -95,4 +95,4 @@ tests, and human review — not a replacement for them.
 
 > **Project status: active research release.** Tamperward is usable today, but its
 > enforcement architecture and supporting evidence are still being hardened; see
-> [SPEC §9.1](https://github.com/hexrift/tamperward/blob/main/SPEC.md#91-maturity-milestones).
+> [SPEC §9.1](https://github.com/hamsasoftware/tamperward/blob/main/SPEC.md#91-maturity-milestones).
