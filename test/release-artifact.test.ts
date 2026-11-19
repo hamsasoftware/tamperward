@@ -250,6 +250,19 @@ describe('packed release contents (#804)', () => {
     expect(() => validateSchemas(root, '1.0.0', root)).toThrow(/oracle-v2/);
   });
 
+  it('accepts both the former and the current repository owner in a canonical identifier', () => {
+    for (const owner of ['hexrift', 'hamsasoftware']) {
+      const root = temporary();
+      writeFiles(root, inputs());
+      writeFileSync(join(root, 'schemas/oracle-v2.schema.json'), schema('oracle-v2.schema.json').replace('/hexrift/', `/${owner}/`));
+      expect(() => validateSchemas(root, '1.0.0', root)).not.toThrow();
+    }
+    const root = temporary();
+    writeFiles(root, inputs());
+    writeFileSync(join(root, 'schemas/oracle-v2.schema.json'), schema('oracle-v2.schema.json').replace('/hexrift/', '/someone-else/'));
+    expect(() => validateSchemas(root, '1.0.0', root)).toThrow(/oracle-v2/);
+  });
+
   it('rejects schema bytes changed since their advertised older tag', () => {
     const root = temporary();
     writeFiles(root, inputs());

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/hexrift/tamperward/v2.45.0/schemas/signed-verdict-v1.schema.json",
+  "$id": "https://raw.githubusercontent.com/hamsasoftware/tamperward/v2.52.8/schemas/signed-verdict-v1.schema.json",
   "title": "TamperWard signed verdict statement v1",
   "type": "object",
   "additionalProperties": false,

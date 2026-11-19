@@ -55,7 +55,7 @@ const dirs: string[] = [];
 const SCHEMA_NAMES = ['check', 'verify', 'run', 'doctor', 'research', 'audit', 'stats', 'status', 'runtime-qualification', 'receipt', 'reconcile'] as const;
 const PUBLISHED_SCHEMA_FILES = readdirSync(join(ROOT, 'schemas')).filter(name => name.endsWith('.schema.json')).sort();
 const PACKAGE_VERSION: string = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version;
-const CANONICAL_ID_RE = /^https:\/\/raw\.githubusercontent\.com\/hexrift\/tamperward\/(v\d+\.\d+\.\d+)\/schemas\/([^/]+)$/;
+const CANONICAL_ID_RE = /^https:\/\/raw\.githubusercontent\.com\/(?:hexrift|hamsasoftware)\/tamperward\/(v\d+\.\d+\.\d+)\/schemas\/([^/]+)$/;
 
 function compareSemver(a: string, b: string): number {
   const pa = a.split('.').map(Number);
