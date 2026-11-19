@@ -33,7 +33,7 @@ library](https://typia.io/blog/ai-deleted-my-tests-and-said-all-tests-pass/) who
 agent deleted the tests, hardcoded outputs keyed by test names, and sabotaged CI, each
 time announcing success.
 
-[Tamperward](https://github.com/hexrift/tamperward) is my answer: treat the safety
+[Tamperward](https://github.com/hamsasoftware/tamperward) is my answer: treat the safety
 nets themselves as protected assets and block the **class** of bypass,
 deterministically — a ruleset evaluated on the actual diff and commands, no model
 calls, enforced at every stage a change passes through. Inside the agent's loop, a
@@ -219,5 +219,5 @@ couldn't resolve. I keep losing my own bets, and the tool is better for every lo
 npx tamperward init
 ```
 
-— [github.com/hexrift/tamperward](https://github.com/hexrift/tamperward) ·
+— [github.com/hamsasoftware/tamperward](https://github.com/hamsasoftware/tamperward) ·
 [npmjs.com/package/tamperward](https://www.npmjs.com/package/tamperward)

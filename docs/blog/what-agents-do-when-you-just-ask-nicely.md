@@ -158,6 +158,6 @@ The ledger after this study: **52 pre-registered bets — 23 refuted, 27 held,
 replay, the disclosed artifacts, and the bets — including the two that lost
 against my own product — are in the repo.
 
-— [github.com/hexrift/tamperward](https://github.com/hexrift/tamperward) ·
+— [github.com/hamsasoftware/tamperward](https://github.com/hamsasoftware/tamperward) ·
 [npmjs.com/package/tamperward](https://www.npmjs.com/package/tamperward) ·
 [the series](./index.md)

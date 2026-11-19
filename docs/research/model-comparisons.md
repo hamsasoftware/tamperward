@@ -28,7 +28,7 @@ result could not have replicated (b ≤ 3). "Stronger" is a characterisation fro
 published capability claims, not a measurement made inside the experiment;
 pinning a model identifier is not pinning an immutable snapshot; and both
 rounds ran one runtime (Claude Code) and one prompt. Registered as secondary in
-[`PREDICTION3.1-taskbench.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round3.1/PREDICTION3.1-taskbench.md)
+[`PREDICTION3.1-taskbench.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round3.1/PREDICTION3.1-taskbench.md)
 §B1; corrected on the common-16 denominator in the
 [errata](../blog/errata.md).
 

@@ -1,5 +1,28 @@
 # Changelog
 
+## [2.52.9] — 2026-11-19
+
+### Fixed
+
+- `NOTICE` names the copyright holder by its registered name, Hamsa Software Ltd.
+
+## [2.52.8] — 2026-11-19
+
+### Changed
+
+- The `$id` of every published JSON schema now points at
+  `https://raw.githubusercontent.com/hamsasoftware/tamperward/v2.52.8/schemas/...`
+  instead of the former `hexrift/tamperward` URL. Consumers that match schemas by
+  `$id` should accept the new URL; the old `hexrift` URLs keep resolving for the
+  versions that shipped them.
+
+## [2.52.7] — 2026-11-19
+
+### Fixed
+
+- `NOTICE` names Hamsa Software as the copyright holder and links `hamsasoftware/tamperward`
+  instead of the former `hexrift` owner.
+
 ## [2.52.6] — 2026-11-19
 
 ### Fixed

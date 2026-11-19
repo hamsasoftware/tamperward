@@ -46,7 +46,7 @@ describe('signed suite admission evidence (#801)', () => {
       oracle_assurance: suiteExitAssurance(), stages: { candidate: 'PASS', pristine: 'PASS', integrity: 'CLEAN' },
     });
     const definition = JSON.parse(readFileSync(join(__dirname, '../schemas/signed-verdict-v2.schema.json'), 'utf8'));
-    expect(definition.$id).toBe('https://raw.githubusercontent.com/hexrift/tamperward/v2.51.0/schemas/signed-verdict-v2.schema.json');
+    expect(definition.$id).toBe('https://raw.githubusercontent.com/hamsasoftware/tamperward/v2.52.8/schemas/signed-verdict-v2.schema.json');
     const schema = new Ajv2020({ strict: true }).compile(definition);
     expect(schema(signed), JSON.stringify(schema.errors)).toBe(true);
   });

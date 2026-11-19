@@ -18,7 +18,7 @@ six complete dependency-tree snapshots and zero attestation reuse. The 2.16.2
 optimization was rolled back before publication; 2.16.3 keeps every verifier-entry
 checkpoint independent. Synthetic fixtures on a GitHub-hosted Node 24 runner, workflow run
 `34758006027`, as recorded in the
-[CHANGELOG](https://github.com/hexrift/tamperward/blob/main/CHANGELOG.md):
+[CHANGELOG](https://github.com/hamsasoftware/tamperward/blob/main/CHANGELOG.md):
 
 | fixture | files | payload bytes | complete snapshot |
 | --- | ---: | ---: | ---: |
@@ -36,7 +36,7 @@ Closing finding P1-8 (a same-size edit plus `touch -r` slipped a skip past the
 stat fast path) removed that fast path: every protected file is hashed on every
 snapshot. Measured cost 4.0ms → 17.2ms on a 1000-file / 4MB protected tree,
 against roughly 450ms of Node startup per hook call
-([SECURITY-ENVELOPE.md](https://github.com/hexrift/tamperward/blob/main/SECURITY-ENVELOPE.md)).
+([SECURITY-ENVELOPE.md](https://github.com/hamsasoftware/tamperward/blob/main/SECURITY-ENVELOPE.md)).
 
 ## What the rounds say about cost
 

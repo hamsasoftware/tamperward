@@ -125,7 +125,7 @@ Separately, the shipped `verify` command is **not** the benchmark oracle: it
 productizes the base-restoration component, not the withheld semantic cases. Its
 pristine-inheritance surface has been extended twice after bypasses were
 demonstrated (1.14.1, 1.14.2), and the surface list lags runner behaviour by
-construction. See [`docs/THREAT-MODEL-pristine-run.md`](https://github.com/hexrift/tamperward/blob/main/docs/THREAT-MODEL-pristine-run.md).
+construction. See [`docs/THREAT-MODEL-pristine-run.md`](https://github.com/hamsasoftware/tamperward/blob/main/docs/THREAT-MODEL-pristine-run.md).
 
 ## The experiment harness was not a security boundary
 
