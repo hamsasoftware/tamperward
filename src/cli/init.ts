@@ -155,7 +155,7 @@ function inferOwner(cwd: string): { owner: string; confirmed: boolean } | null {
 
 const POLICY_CONTENT = `# Tamperward policy. The BASELINE (all rules, standard protected globs) applies even
 # without this file — everything here is an override, so an empty file changes nothing.
-# Docs: https://github.com/hexrift/tamperward#readme
+# Docs: https://github.com/hamsasoftware/tamperward#readme
 #
 # version gates rule GRADUATIONS: a baseline rule promoted warn -> block at policy
 # version N blocks only when you declare version >= N. Raising it is opting in.
