@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.52.9] — 2026-11-19
+
+### Fixed
+
+- `NOTICE` names the copyright holder by its registered name, Hamsa Software Ltd.
+
 ## [2.52.8] — 2026-11-19
 
 ### Changed
