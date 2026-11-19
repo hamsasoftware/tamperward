@@ -1407,9 +1407,6 @@ function nameGlob(pattern: string): (name: string) => boolean {
   return (n) => globMatch(pattern, n);
 }
 
-/** `*`/`?` wildcard match in linear space and O(pattern x name) time. A regex
- *  built from the pattern backtracks polynomially on `a*a*a*…*b`, and the pattern
- *  comes from a command inside the diff under inspection. */
 export function globMatch(pattern: string, name: string): boolean {
   let p = 0;
   let n = 0;
