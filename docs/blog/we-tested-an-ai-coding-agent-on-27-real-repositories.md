@@ -17,7 +17,7 @@
 > not 13/26 (50%). Bet **B1 is refuted, not held**. The prevention result, the
 > McNemar test and every paired figure are unchanged. Method, per-snapshot
 > classification and artifact hashes:
-> [`harness/taskbench/reanalysis/TRANSFER-REANALYSIS.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/reanalysis/TRANSFER-REANALYSIS.md).
+> [`harness/taskbench/reanalysis/TRANSFER-REANALYSIS.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/reanalysis/TRANSFER-REANALYSIS.md).
 > See also the [errata](./errata.md).
 
 *Short answer: a third — see the correction above; this post originally said

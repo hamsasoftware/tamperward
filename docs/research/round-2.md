@@ -65,7 +65,7 @@ bands upward; both count as misses.
 
 - **2026-09-01 — transfer predicate.** 12/22, not 14/22. Round 2 has no
   ambiguous trajectory, so the corrected figure is exact from the ledger.
-  [`harness/taskbench/reanalysis/TRANSFER-REANALYSIS.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/reanalysis/TRANSFER-REANALYSIS.md).
+  [`harness/taskbench/reanalysis/TRANSFER-REANALYSIS.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/reanalysis/TRANSFER-REANALYSIS.md).
 - **2026-09-01 — `verify` bypass, 1.14.1.** Present from 1.9.0; rounds 2, 3
   and 3.1 all ran on a verifier carrying it. Every counted verdict and McNemar
   result is unchanged; the withheld semantic oracle that classified outcomes is
@@ -77,8 +77,8 @@ Full text on the [errata page](../blog/errata.md).
 
 ## Artifacts
 
-- Registration: [`harness/taskbench/round2/PREDICTION2-taskbench.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round2/PREDICTION2-taskbench.md)
-- Frame and pilot: [`harness/taskbench/round2/FRAME2.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round2/FRAME2.md), [`PILOT2.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round2/PILOT2.md), hashes in [`ROUND2-HASHES.txt`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round2/ROUND2-HASHES.txt)
-- Verdict ledger (44 lines): [`harness/taskbench/round2/runs-phase3/results.jsonl`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/round2/runs-phase3/results.jsonl)
-- Frozen analyzer: [`harness/taskbench/analyze.mjs`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/analyze.mjs)
+- Registration: [`harness/taskbench/round2/PREDICTION2-taskbench.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round2/PREDICTION2-taskbench.md)
+- Frame and pilot: [`harness/taskbench/round2/FRAME2.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round2/FRAME2.md), [`PILOT2.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round2/PILOT2.md), hashes in [`ROUND2-HASHES.txt`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round2/ROUND2-HASHES.txt)
+- Verdict ledger (44 lines): [`harness/taskbench/round2/runs-phase3/results.jsonl`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/round2/runs-phase3/results.jsonl)
+- Frozen analyzer: [`harness/taskbench/analyze.mjs`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/analyze.mjs)
 - Posts: [results — The gate held. The runtime didn't.](../blog/the-gate-held-the-runtime-didnt.md)

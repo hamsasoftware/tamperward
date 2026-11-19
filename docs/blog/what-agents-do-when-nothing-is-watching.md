@@ -129,6 +129,6 @@ blind to, and each gets a pre-registration with bets before a single rep:
 If those produce more refutations, they'll be published like all the others. The bet
 ledger only stays honest if it keeps being allowed to lose.
 
-— [github.com/hexrift/tamperward](https://github.com/hexrift/tamperward) ·
+— [github.com/hamsasoftware/tamperward](https://github.com/hamsasoftware/tamperward) ·
 [npmjs.com/package/tamperward](https://www.npmjs.com/package/tamperward) ·
 [the launch post](./what-agents-do-when-you-block-their-shortcuts.md)

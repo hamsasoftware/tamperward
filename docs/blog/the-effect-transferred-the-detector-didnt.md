@@ -10,7 +10,7 @@
 
 > **Note added September 1, 2026.** This round's pristine Stop-time verification
 > ran on a `tamperward verify` that carried a bypass, closed in
-> [1.14.1](https://github.com/hexrift/tamperward/blob/main/CHANGELOG.md): an
+> [1.14.1](https://github.com/hamsasoftware/tamperward/blob/main/CHANGELOG.md): an
 > agent-**added** protected file (for example a new `conftest.py`) was kept in
 > the pristine copy and could deselect the very base tests the overlay had just
 > restored. No counted trajectory in this round shows an added protected control
@@ -80,7 +80,7 @@ exists in JavaScript", comparing against rounds-1/2 figures computed with a
 defective predicate. On the corrected predicate the JavaScript rounds are 33.3%
 (round 1) and 54.5% (round 2) — a spread, not a single rate. Round 3's 52.9% sits
 beside round 2 and well above round 1. See*
-[`TRANSFER-REANALYSIS.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/reanalysis/TRANSFER-REANALYSIS.md).
+[`TRANSFER-REANALYSIS.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/reanalysis/TRANSFER-REANALYSIS.md).
 
 ## Finding 2 — the prediction that lost
 

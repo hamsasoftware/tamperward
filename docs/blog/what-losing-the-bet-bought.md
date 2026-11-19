@@ -140,7 +140,7 @@ The loop layer is the correction layer. It has never been the authority.
 > (2) The copies are separate directories, **not** a security boundary; both
 > execute agent-controlled code unsandboxed. (3) "Files the agent added are kept
 > — they only add strictness" was **false and shipped a bypass**, fixed in
-> [1.14.1](https://github.com/hexrift/tamperward/blob/main/CHANGELOG.md). See the
+> [1.14.1](https://github.com/hamsasoftware/tamperward/blob/main/CHANGELOG.md). See the
 > [errata](./errata.md).
 
 The one layer nothing got past in Phase 3 was never the gate — it was the

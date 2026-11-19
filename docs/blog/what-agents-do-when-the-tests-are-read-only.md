@@ -167,6 +167,6 @@ The ledger: **64 pre-registered bets — 28 refuted, 34 held, 2 the data couldn'
 resolve.** The registration, the probe disclosures, the elevation log lines, and
 the arm levers (`HF_IMMUTABLE`, `HF_ELEVATE`) are all in the repo.
 
-— [github.com/hexrift/tamperward](https://github.com/hexrift/tamperward) ·
+— [github.com/hamsasoftware/tamperward](https://github.com/hamsasoftware/tamperward) ·
 [npmjs.com/package/tamperward](https://www.npmjs.com/package/tamperward) ·
 [the series](./index.md)

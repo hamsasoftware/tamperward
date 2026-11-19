@@ -24,9 +24,9 @@ transient-mutation rescan.
 
 The prior unresolved-ledger item was wrong: the repository does contain the study
 that supplies the two additional refutations. The laundering negatives corpus was
-[registered at 12:33:09 UTC on August 29](https://github.com/hexrift/tamperward/commit/7e563d9),
+[registered at 12:33:09 UTC on August 29](https://github.com/hamsasoftware/tamperward/commit/7e563d9),
 after post 8 (12:31:48 UTC), and its
-[outcome was committed at 12:35:07 UTC](https://github.com/hexrift/tamperward/commit/733272a7734d6a723eece8be3a1afaf904128822),
+[outcome was committed at 12:35:07 UTC](https://github.com/hamsasoftware/tamperward/commit/733272a7734d6a723eece8be3a1afaf904128822),
 before post 9 (13:13:33 UTC). The frozen registration and recorded outcome identify
 the additions individually:
 
@@ -38,9 +38,9 @@ the additions individually:
 
 Thus the recorded step is **56/25/29/2 + 3/2/1/0 = 59/27/30/2**
 (total/refuted/held/unresolvable). The preceding
-[tuned-FP registration](https://github.com/hexrift/tamperward/blob/main/harness/PREDICTION-tuned-fp.md)
+[tuned-FP registration](https://github.com/hamsasoftware/tamperward/blob/main/harness/PREDICTION-tuned-fp.md)
 already ends at 56/25/29/2; it is not the missing study. The
-[laundering-corpus record](https://github.com/hexrift/tamperward/blob/733272a7734d6a723eece8be3a1afaf904128822/harness/PREDICTION-launder-corpus.md)
+[laundering-corpus record](https://github.com/hamsasoftware/tamperward/blob/733272a7734d6a723eece8be3a1afaf904128822/harness/PREDICTION-launder-corpus.md)
 explicitly ends at 59/27/30/2. This is a reconciliation of retained registration
 and outcome records, not a rerun or independent adjudication of the corpus.
 It resolves this step without reinstating every later cumulative total: later
@@ -58,8 +58,8 @@ and no outcome has been rescored.
 The v1.7.0 release notes had been folded into the v1.8.0 section. The heading
 `## [1.7.0] — 2026-08-30` is restored immediately before the
 `test-content-removal` notes, without changing the historical release prose.
-The [tagged changelog](https://github.com/hexrift/tamperward/blob/56951deb7d615b40f01ca95bc0668aa67666f3e1/CHANGELOG.md)
-and [published v1.7.0 release](https://github.com/hexrift/tamperward/releases/tag/v1.7.0)
+The [tagged changelog](https://github.com/hamsasoftware/tamperward/blob/56951deb7d615b40f01ca95bc0668aa67666f3e1/CHANGELOG.md)
+and [published v1.7.0 release](https://github.com/hamsasoftware/tamperward/releases/tag/v1.7.0)
 establish the heading, date and notes. This resolves the former third
 "Known, unresolved" item; the other two bookkeeping items are addressed by the
 October 22 correction above.
@@ -241,7 +241,7 @@ intention-to-treat analysis its registration claimed.
 
 Method, per-snapshot classification and artifact hashes are published rather
 than asserted, in
-[`harness/taskbench/reanalysis/TRANSFER-REANALYSIS.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/reanalysis/TRANSFER-REANALYSIS.md).
+[`harness/taskbench/reanalysis/TRANSFER-REANALYSIS.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/reanalysis/TRANSFER-REANALYSIS.md).
 The two round-1 trajectories that the ledger alone could not resolve were
 classified from their observer snapshots using the **round-1** policy
 definitions verbatim — no detector added since round 1 was used — and both come

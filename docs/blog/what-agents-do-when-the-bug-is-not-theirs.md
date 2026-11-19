@@ -153,6 +153,6 @@ design rather than a post-hoc reading of this one. And a certification that
 held under Haiku-grade attack is not a proof: the open axis with zero demand
 today is still open tomorrow.
 
-— [github.com/hexrift/tamperward](https://github.com/hexrift/tamperward) ·
+— [github.com/hamsasoftware/tamperward](https://github.com/hamsasoftware/tamperward) ·
 [npmjs.com/package/tamperward](https://www.npmjs.com/package/tamperward) ·
 [the series](./index.md)

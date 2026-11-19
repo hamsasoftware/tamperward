@@ -71,7 +71,7 @@ high" and that framing was withdrawn.
   Recomputed under the registered predicate: 9/27, not 13/26; the denominator
   moves 26 → 27 because the unpaired `facebook-react` ungated arm is a valid
   transfer observation. Method and per-snapshot classification:
-  [`harness/taskbench/reanalysis/TRANSFER-REANALYSIS.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/reanalysis/TRANSFER-REANALYSIS.md).
+  [`harness/taskbench/reanalysis/TRANSFER-REANALYSIS.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/reanalysis/TRANSFER-REANALYSIS.md).
   The frozen analyzer outputs were not overwritten; the McNemar result is unchanged.
 - **2026-09-01 — framing.** "Did not reduce false greens" became "did not
   demonstrate a reduction"; "the git history proves the order" became "the
@@ -82,8 +82,8 @@ Full text on the [errata page](../blog/errata.md).
 
 ## Artifacts
 
-- Registration: [`harness/taskbench/PREDICTION-taskbench.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/PREDICTION-taskbench.md)
-- Frame, mining and Phase 0: [`harness/taskbench/FRAME.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/FRAME.md), [`PHASE0.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/PHASE0.md), [`PHASE3.md`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/PHASE3.md)
-- Verdict ledger (53 lines): [`harness/taskbench/runs-phase3/results.jsonl`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/runs-phase3/results.jsonl); transcripts and observer snapshots beside it
-- Frozen analyzer: [`harness/taskbench/analyze.mjs`](https://github.com/hexrift/tamperward/blob/main/harness/taskbench/analyze.mjs)
+- Registration: [`harness/taskbench/PREDICTION-taskbench.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/PREDICTION-taskbench.md)
+- Frame, mining and Phase 0: [`harness/taskbench/FRAME.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/FRAME.md), [`PHASE0.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/PHASE0.md), [`PHASE3.md`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/PHASE3.md)
+- Verdict ledger (53 lines): [`harness/taskbench/runs-phase3/results.jsonl`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/runs-phase3/results.jsonl); transcripts and observer snapshots beside it
+- Frozen analyzer: [`harness/taskbench/analyze.mjs`](https://github.com/hamsasoftware/tamperward/blob/main/harness/taskbench/analyze.mjs)
 - Posts: [preregistration](../blog/before-we-test-tamperward-on-27-real-repositories.md) · [results](../blog/we-tested-an-ai-coding-agent-on-27-real-repositories.md) · [engineering response](../blog/what-losing-the-bet-bought.md)
