@@ -1,7 +1,7 @@
 name: docs
 
 # Builds the VitePress site under docs/ and deploys it to GitHub Pages
-# (hexrift.github.io/tamperward). Docs only — nothing here touches the npm package,
+# (hamsasoftware.github.io/tamperward). Docs only — nothing here touches the npm package,
 # the release pipeline, or the gate.
 on:
   push:
