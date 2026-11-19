@@ -25,4 +25,11 @@ describe('repository URLs emitted by the CLI', () => {
     expect(policy).toContain('# Docs: https://github.com/hamsasoftware/tamperward#readme');
     expect(policy).not.toContain('hexrift');
   });
+
+  it('NOTICE names Hamsa Software and links hamsasoftware/tamperward', () => {
+    const notice = readFileSync(join(__dirname, '..', 'NOTICE'), 'utf8');
+    expect(notice).toContain('Copyright 2026 Hamsa Software');
+    expect(notice).toContain('https://github.com/hamsasoftware/tamperward');
+    expect(notice).not.toContain('hexrift');
+  });
 });
