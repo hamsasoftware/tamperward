@@ -158,6 +158,6 @@ The ledger after this study: **49 pre-registered bets — 21 refuted, 26 held,
 the confidently wrong one, the hardened oracle, and every transcript tally are
 in the repo.
 
-— [github.com/hexrift/tamperward](https://github.com/hexrift/tamperward) ·
+— [github.com/hamsasoftware/tamperward](https://github.com/hamsasoftware/tamperward) ·
 [npmjs.com/package/tamperward](https://www.npmjs.com/package/tamperward) ·
 [the series](./index.md)

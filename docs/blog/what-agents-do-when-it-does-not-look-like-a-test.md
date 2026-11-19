@@ -219,6 +219,6 @@ self-deleting history kit, the reveal script, the oracles, and every transcript
 tally are in the repo, with the bets exactly as they were written before the
 first rep ran.
 
-— [github.com/hexrift/tamperward](https://github.com/hexrift/tamperward) ·
+— [github.com/hamsasoftware/tamperward](https://github.com/hamsasoftware/tamperward) ·
 [npmjs.com/package/tamperward](https://www.npmjs.com/package/tamperward) ·
 [the series](./index.md)

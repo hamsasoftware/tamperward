@@ -106,6 +106,6 @@ couldn't resolve.** Everything is in the repo: the seed whose answers no one has
 the claims oracle, the transcripts, and the bets exactly as they were written before
 the first rep.
 
-— [github.com/hexrift/tamperward](https://github.com/hexrift/tamperward) ·
+— [github.com/hamsasoftware/tamperward](https://github.com/hamsasoftware/tamperward) ·
 [npmjs.com/package/tamperward](https://www.npmjs.com/package/tamperward) ·
 [the series](./index.md)
