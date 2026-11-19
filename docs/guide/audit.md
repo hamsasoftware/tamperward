@@ -64,9 +64,9 @@ the raw Claude session id. The session identifier is one-way hashed before it le
 the hook.
 
 The published event schema is
-[`schemas/audit-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/audit-v1.schema.json).
+[`schemas/audit-v1.schema.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/audit-v1.schema.json).
 The `stats --json` aggregate has its own
-[`schemas/stats-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/stats-v1.schema.json).
+[`schemas/stats-v1.schema.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/stats-v1.schema.json).
 
 ### Verification and bare-suite measurements
 
@@ -86,7 +86,7 @@ checkout and machine as the verification sample. Pair only identical non-missing
 `comparison` hashes, control dependencies and run order/cache effects, and retain the
 outcomes beside the timings. Unpaired percentiles are not an overhead ratio.
 
-The strict [measurement-v1 schema](https://github.com/hexrift/tamperward/blob/main/schemas/measurement-v1.schema.json)
+The strict [measurement-v1 schema](https://github.com/hamsasoftware/tamperward/blob/main/schemas/measurement-v1.schema.json)
 records a random id, timestamp, kind, outcome and duration, with optional comparison hash
 and actual sign-off use. It retains no raw command, path, machine name or approval token.
 Incomplete samples are reported separately and excluded from timing percentiles; missing
@@ -156,7 +156,7 @@ or an ISO timestamp.
 ## Keep the durable history in GitHub
 
 TamperWard itself ships
-[`.github/workflows/tamperward-audit.yml`](https://github.com/hexrift/tamperward/blob/main/.github/workflows/tamperward-audit.yml).
+[`.github/workflows/tamperward-audit.yml`](https://github.com/hamsasoftware/tamperward/blob/main/.github/workflows/tamperward-audit.yml).
 The hook does **not** push anything to GitHub. Publishing goes through a pull
 request, and GitHub Actions is the writer. The invariant is not "nothing
 automatic ever writes the evidence branch" but: nothing unreviewed or
@@ -233,7 +233,7 @@ privileged job.
 
 Add each set of events as an immutable `audit/pending/<batch-id>.jsonl` in a pull
 request — review is the curation step — and merge. See
-[`audit/README.md`](https://github.com/hexrift/tamperward/blob/main/audit/README.md).
+[`audit/README.md`](https://github.com/hamsasoftware/tamperward/blob/main/audit/README.md).
 Batches are immutable once merged: to correct evidence, add a new batch rather
 than editing an old one. Ingestion never writes `main`; it only ever appends to
 the dedicated `tamperward-audit` branch.

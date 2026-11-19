@@ -20,7 +20,7 @@ hero:
       link: /blog/what-agents-do-when-you-block-their-shortcuts
     - theme: alt
       text: GitHub
-      link: https://github.com/hexrift/tamperward
+      link: https://github.com/hamsasoftware/tamperward
 
 features:
   - title: Deterministic, no model calls

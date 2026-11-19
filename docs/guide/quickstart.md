@@ -137,4 +137,4 @@ Treat Tamperward as one layer of defence in depth — alongside protected CI, in
 - **Trust model & architecture** — trusted vs. untrusted input at every boundary → [Architecture](../architecture.md)
 - **Evidence & research** — preregistered predictions, outcomes, corrections, and limitations → [Evidence](../research/index.md)
 
-> **Project status: active research release.** Tamperward is usable today, but its enforcement architecture and supporting evidence are still being hardened. The 2.0 major marks the Node 18 drop, not a declaration of security maturity — the distance to that is tracked milestone by milestone in [SPEC §9.1](https://github.com/hexrift/tamperward/blob/main/SPEC.md#91-maturity-milestones).
+> **Project status: active research release.** Tamperward is usable today, but its enforcement architecture and supporting evidence are still being hardened. The 2.0 major marks the Node 18 drop, not a declaration of security maturity — the distance to that is tracked milestone by milestone in [SPEC §9.1](https://github.com/hamsasoftware/tamperward/blob/main/SPEC.md#91-maturity-milestones).

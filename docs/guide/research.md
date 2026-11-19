@@ -18,7 +18,7 @@ npx tamperward research validate --bundle ./model-eval.tgz
 ```
 
 Nothing under `harness/` is edited or written. The ledger is yours; counted-round
-records still reach `main` only the way [CLAUDE.md](https://github.com/hexrift/tamperward/blob/main/CLAUDE.md)
+records still reach `main` only the way [CLAUDE.md](https://github.com/hamsasoftware/tamperward/blob/main/CLAUDE.md)
 describes.
 
 ## Preflight: no root
@@ -130,7 +130,7 @@ count is over pairs whose **both** arms were measured.
 
 `research run` writes one document per pair and, with `--json`, prints the same
 document as one line on stdout. Both documents are published as
-[`schemas/research-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/research-v1.schema.json)
+[`schemas/research-v1.schema.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/research-v1.schema.json)
 (`document: "pair"` and `document: "summary"`), under the same additive schema-major
 discipline as the other machine outputs.
 
@@ -243,7 +243,7 @@ cannot take the task on its argv can still read it.
 The stdio adapter is a language-neutral JSONL lifecycle contract. A runtime may
 send `hello`, `start`, `run`, `event` (`tool`, `edit`, or `turn`), `intervention`,
 `complete`, and `error` objects; the published shape is
-[`schemas/research-stdio-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/research-stdio-v1.schema.json).
+[`schemas/research-stdio-v1.schema.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/research-stdio-v1.schema.json).
 Capability declarations are deliberately descriptive: this release does not wire
 stdio events into PreToolUse denial, so `not-connected` must not be treated as
 enforcement. The runner still owns the envelope and independent outcome

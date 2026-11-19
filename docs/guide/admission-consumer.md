@@ -59,7 +59,7 @@ exactly the seven fields accepted by the CLI:
   "gate_version": "2.48.3",
   "policy_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
   "verdict": "VERIFIED",
-  "audience": "hexrift/tamperward:merge",
+  "audience": "hamsasoftware/tamperward:merge",
   "nonce": "protected-request-42/attempt-1"
 }
 ```
@@ -122,7 +122,7 @@ For a clean request, an illustrative payload is:
 ```json
 {
   "schema_version": 2,
-  "repository": "hexrift/tamperward",
+  "repository": "hamsasoftware/tamperward",
   "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "base": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "tree": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
@@ -132,7 +132,7 @@ For a clean request, an illustrative payload is:
   "verdict": "VERIFIED",
   "assurance": "suite-exit-only",
   "exception": null,
-  "audience": "hexrift/tamperward:merge",
+  "audience": "hamsasoftware/tamperward:merge",
   "nonce": "protected-request-42/attempt-1",
   "issued_at": "2026-11-01T12:00:00.000Z",
   "expires_at": "2026-11-01T12:10:00.000Z"

@@ -341,14 +341,14 @@ npm package version. `check --json`, `verify --json`, `run --json`, `doctor --js
 `"schema_version": 1`, and TamperWard publishes the corresponding JSON Schema
 Draft 2020-12 documents in the npm package and repository:
 
-- [`schemas/check-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/check-v1.schema.json)
-- [`schemas/verify-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/verify-v1.schema.json)
-- [`schemas/run-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/run-v1.schema.json)
-- [`schemas/doctor-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/doctor-v1.schema.json)
-- [`schemas/research-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/research-v1.schema.json) — from **2.23.0**, the `pair` records `research run` writes and the `summary` document `research summarize` prints
-- [`schemas/audit-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/audit-v1.schema.json) — from **2.26.0**, the privacy-safe structured event under `TAMPERWARD_AUDIT_LOG` (JSONL, one event per line)
-- [`schemas/stats-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/stats-v1.schema.json) — the aggregate document from `tamperward stats --json`
-- [`schemas/status-v1.schema.json`](https://github.com/hexrift/tamperward/blob/main/schemas/status-v1.schema.json) — from **2.34.0**, the three-lane verification posture from `tamperward status --json` (Authority / Intervention / Verification)
+- [`schemas/check-v1.schema.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/check-v1.schema.json)
+- [`schemas/verify-v1.schema.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/verify-v1.schema.json)
+- [`schemas/run-v1.schema.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/run-v1.schema.json)
+- [`schemas/doctor-v1.schema.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/doctor-v1.schema.json)
+- [`schemas/research-v1.schema.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/research-v1.schema.json) — from **2.23.0**, the `pair` records `research run` writes and the `summary` document `research summarize` prints
+- [`schemas/audit-v1.schema.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/audit-v1.schema.json) — from **2.26.0**, the privacy-safe structured event under `TAMPERWARD_AUDIT_LOG` (JSONL, one event per line)
+- [`schemas/stats-v1.schema.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/stats-v1.schema.json) — the aggregate document from `tamperward stats --json`
+- [`schemas/status-v1.schema.json`](https://github.com/hamsasoftware/tamperward/blob/main/schemas/status-v1.schema.json) — from **2.34.0**, the three-lane verification posture from `tamperward status --json` (Authority / Intervention / Verification)
 
 Schema major **1** is deliberately additive: consumers should ignore fields they do
 not understand, and adding new evidence/diagnostic fields does not require a bump.
